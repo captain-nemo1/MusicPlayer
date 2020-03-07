@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Nemo Player</string>
     <string name="song_name">Song Name</string>
+    <string name="description">Music Player</string>
 </resources>
