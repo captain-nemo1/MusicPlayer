@@ -7,29 +7,40 @@ import android.net.Uri;
 
 import java.io.IOException;
 
+import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
+import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
-import static com.nemocorp.nemoplayer.MainActivity.YES_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.flag;
+import static com.nemocorp.nemoplayer.MainActivity.image;
 import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
-import static com.nemocorp.nemoplayer.MainActivity.notification;
+import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 import static com.nemocorp.nemoplayer.musicpage.seek;
+
+//import static com.nemocorp.nemoplayer.MainActivity.notification;
 
 public class NotificationReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        if (YES_ACTION.equals(action)) {
+        if (PLAY_ACTION.equals(action)) {
+            if(flag==true)
+            {MainActivity.wantsmusic=false; image=R.drawable.ic_play_circle_filled_black_24dp;}
+            else
+            {MainActivity.wantsmusic=true; image=R.drawable.pause;}
             MainActivity.Pause1();
             if(k1==1)
             {
                 musicpage.check();
             }
+            Intent service=new Intent(context, StickyService.class);
+            context.startService(service);
+            //notification(context);
 
         } else if (PREV_ACTION.equals(action)) {
             if (flag != false) {
@@ -44,13 +55,15 @@ public class NotificationReceiver extends BroadcastReceiver {
                     mediaPlayer.prepare();
                     mediaPlayer.start();
                     MainActivity.createThread();
-                    notification(context);
+                    Intent service=new Intent(context, StickyService.class);
+                    context.startService(service);
+                    //notification(context);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 if(k1==1)
                 {changephotoactivity2();}}
-            } else
+            } else if(NEXT_ACTION.equals(action))
             {
                 if(flag!=false) {
                     if (current == songs.size() - 1)
@@ -64,7 +77,9 @@ public class NotificationReceiver extends BroadcastReceiver {
                         mediaPlayer.prepare();
                         mediaPlayer.start();
                         MainActivity.createThread();
-                        notification(context);
+                        Intent service=new Intent(context, StickyService.class);
+                        context.startService(service);
+                        //notification(context);
                     }
                     catch (IOException e) {
                         e.printStackTrace();
@@ -72,6 +87,11 @@ public class NotificationReceiver extends BroadcastReceiver {
                     if(k1==1)
                     {changephotoactivity2();}
             }
+        }
+        else {
+            notificationManager.cancel(101);
+
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
 

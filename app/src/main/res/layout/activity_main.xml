@@ -27,6 +27,7 @@
         android:layout_height="0dp"
         android:layout_weight="1.25"
         android:padding="5dp"
+        android:layout_marginBottom="20dp"
         android:background="@color/black">
 
         <TextView
@@ -70,8 +71,6 @@
             android:layout_marginTop="1dp"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
             android:gravity="center_horizontal"
             android:hint="@string/song_name"
             android:marqueeRepeatLimit="marquee_forever"
@@ -135,14 +134,15 @@
 
         <Button
             android:id="@+id/button2"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_below="@+id/play"
+            android:layout_width="45dp"
+            android:layout_height="46dp"
+            android:layout_below="@+id/repeat"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="50dp"
             android:layout_marginTop="7dp"
             android:layout_marginRight="20dp"
-            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="14dp"
             android:background="@drawable/up"
-            android:layout_marginStart="50dp"
             android:onClick="Top" />
 
 

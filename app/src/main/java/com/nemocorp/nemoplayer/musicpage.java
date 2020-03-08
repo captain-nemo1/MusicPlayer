@@ -1,11 +1,9 @@
 package com.nemocorp.nemoplayer;
 
 import android.annotation.SuppressLint;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,27 +16,20 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 import java.io.IOException;
 
-import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
-import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.Pause1;
-import static com.nemocorp.nemoplayer.MainActivity.YES_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
-import static com.nemocorp.nemoplayer.MainActivity.builder;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.flag;
+import static com.nemocorp.nemoplayer.MainActivity.image;
 import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.loop;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.shuffle;
-import static com.nemocorp.nemoplayer.MainActivity.song_artist;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 
@@ -54,7 +45,7 @@ public class musicpage extends AppCompatActivity {
     static ImageView i1;
     static Thread th;
     LinearLayout c1;
-    NotificationManagerCompat notificationManager;
+    Intent service;
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +66,7 @@ public class musicpage extends AppCompatActivity {
         th=new Thread();
         t1.setText(title);
         check();
+        service=new Intent(this, StickyService.class);
         Handler handler=new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -106,6 +98,7 @@ public class musicpage extends AppCompatActivity {
                             current =0;
                         else
                         current=current+1;
+                            Log.d("thiss111", String.valueOf(current));
                         if(mediaPlayer!=null)
                             mediaPlayer.reset();
                         try {
@@ -113,7 +106,7 @@ public class musicpage extends AppCompatActivity {
                             mediaPlayer.prepare();
                             mediaPlayer.start();
                             MainActivity.createThread();
-                            notification();
+                            startService(service);
                         }
                         catch (IOException e) {
                             e.printStackTrace();
@@ -139,18 +132,18 @@ public class musicpage extends AppCompatActivity {
                     public void onSwipeLeft()
                     {
                         if(flag!=false) {
-                            if(current==0)
-                            {current=0;}
-                            else
-                            {current=current-1;}
+                            if(current!=0)
+                                current=current-1;
+
                         if(mediaPlayer!=null)
                             mediaPlayer.reset();
+                        Log.d("thiss", String.valueOf(current));
                         try {
                             mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
                             mediaPlayer.prepare();
                             mediaPlayer.start();
                             MainActivity.createThread();
-                            notification();
+                            startService(service);
                         }
                         catch (IOException e) {
                             e.printStackTrace();
@@ -179,7 +172,6 @@ public class musicpage extends AppCompatActivity {
         k1=1;
         s2.setMax(mediaPlayer.getDuration());
         prog=i.getStringExtra("prog");
-        String art=i.getStringExtra("art");
         int current=Integer.valueOf(prog);
         int min = (current / 1000) / 60;
         int sec = (current/ 1000) % 60;
@@ -282,82 +274,6 @@ public class musicpage extends AppCompatActivity {
 
     }
 
-    public void notification()
-    {
-        Intent intent = new Intent(musicpage.this, MainActivity.class);
-        intent.setAction(Intent.ACTION_MAIN);
-        intent.setFlags( Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,  0);
-        Bitmap icon;String s="Unknown";
-        MediaMetadataRetriever m= new MediaMetadataRetriever();
-        m.setDataSource(songs.get(current));
-        if(MainActivity.th2.isAlive()){
-            try{
-                s=m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                Toast.makeText(this, "help," ,Toast.LENGTH_LONG).show();
-                byte[] a = m.getEmbeddedPicture();
-                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                icon=c;
-            } catch (Exception e) {
-                icon = BitmapFactory.decodeResource(getResources(), R.drawable.noicon);
-            }
-        }
-        else {
-            s=song_artist.get(current);
-            String k = String.valueOf(bitmapArray.get(current));
-            if (!k.equals("null")) {
-                icon = bitmapArray.get(current);
-            } else {
-                icon = BitmapFactory.decodeResource(getResources(), R.drawable.noicon);
-            }
-        }
-        builder = new NotificationCompat.Builder(this, "101")
-                .setSmallIcon(R.drawable.music)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setContentTitle(song_name.get(current))
-                .setContentText(s)
-                .setContentIntent(pendingIntent)
-                .setLargeIcon(icon)
-                .setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(icon)
-                        .bigLargeIcon(null))
-                .setColor(Color.BLACK)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-        builder.setOngoing(true);
-        Intent yesReceive2 = new Intent(this, NotificationReceiver.class);
-        yesReceive2.setAction(PREV_ACTION);
-        PendingIntent pendingIntentYes2 = PendingIntent.getBroadcast(this, 12345, yesReceive2,  PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.addAction(R.drawable.previous, "Prev", pendingIntentYes2);
-
-
-
-
-        Intent yesReceive = new Intent(this, NotificationReceiver.class);
-        yesReceive.setAction(YES_ACTION);
-        PendingIntent pendingIntentYes = PendingIntent.getBroadcast(this, 12345, yesReceive, PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.addAction(R.drawable.pause, "Play/Pause", pendingIntentYes);
-
-
-        Intent yesReceive3 = new Intent(this, NotificationReceiver.class);
-        yesReceive3.setAction(NEXT_ACTION);
-        PendingIntent pendingIntentYes3 = PendingIntent.getBroadcast(this, 12345, yesReceive3,  PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.addAction(R.drawable.ic_skip_next_black_24dp, "Next", pendingIntentYes3);
-
-
-
-
-        notificationManager = NotificationManagerCompat.from(musicpage.this);
-        notificationManager.notify(101, builder.build());
-
-
-
-    }
-
     static public void check() {
         if (flag == true)
             b1.setBackgroundResource(R.drawable.pause);
@@ -381,10 +297,13 @@ public class musicpage extends AppCompatActivity {
         Pause1();
         if (flag == true) {
                 this.b1.setBackgroundResource(R.drawable.pause);
+                image=R.drawable.pause;
             }
          else {
                 this.b1.setBackgroundResource(R.drawable.ic_play_circle_filled_black_24dp);
+                image=R.drawable.ic_play_circle_filled_black_24dp;
         }
+        startService(service);
     }
     @Override
     public void onPause()
@@ -398,9 +317,6 @@ public class musicpage extends AppCompatActivity {
         k1=0;
         super.onStop();
     }
-
-
-
 
     @Override
     public void onBackPressed()
