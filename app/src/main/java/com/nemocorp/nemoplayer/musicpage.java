@@ -22,7 +22,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
 
 import static com.nemocorp.nemoplayer.MainActivity.Pause1;
-import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.flag;
 import static com.nemocorp.nemoplayer.MainActivity.image;
@@ -30,6 +29,7 @@ import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.loop;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.shuffle;
+import static com.nemocorp.nemoplayer.MainActivity.song_artist;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 
@@ -62,9 +62,8 @@ public class musicpage extends AppCompatActivity {
         s2=findViewById(R.id.seekBar2);
         c1=findViewById(R.id.lay);
         i1=findViewById(R.id.image);
-        String title = i.getStringExtra("name");
         th=new Thread();
-        t1.setText(title);
+        t1.setText(song_artist.get(current)+"-"+song_name.get(current));
         check();
         service=new Intent(this, StickyService.class);
         Handler handler=new Handler();
@@ -119,15 +118,18 @@ public class musicpage extends AppCompatActivity {
                             t3.setText(min+":0"+sec);
                         t2.setText("0:00");
                         seek();
-                        t1.setText(song_name.get(current));
-                            String k=String.valueOf(bitmapArray.get(current));
-                            if(k!="null")
-                                i1.setImageBitmap(bitmapArray.get(current));
-                            else {
-                                Log.d("gelp", k + " " + songs.get(current));
-                                i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                        t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+                        MediaMetadataRetriever m= new MediaMetadataRetriever();
+                        m.setDataSource(songs.get(MainActivity.current));
+                        try {
+                            byte[] a = m.getEmbeddedPicture();
+                            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                            i1.setImageBitmap(c);
+                        } catch (Exception e) {
+                            i1.setImageResource(R.drawable.ic_music_note_black_24dp);
                             }
-                    }}
+                        }
+                    }
 
                     public void onSwipeLeft()
                     {
@@ -157,13 +159,15 @@ public class musicpage extends AppCompatActivity {
                         t2.setText("0:00");
                         seek();
                         t1.setText(song_name.get(current));
-                            String k=String.valueOf(bitmapArray.get(current));
-                            if(k!="null")
-                                i1.setImageBitmap(bitmapArray.get(current));
-                            else
-                            {
-                                i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-                            }
+                        MediaMetadataRetriever m= new MediaMetadataRetriever();
+                        m.setDataSource(songs.get(MainActivity.current));
+                        try {
+                            byte[] a = m.getEmbeddedPicture();
+                            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                            i1.setImageBitmap(c);
+                        } catch (Exception e) {
+                            i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                        }
                     }}
                 });
 
@@ -189,8 +193,6 @@ public class musicpage extends AppCompatActivity {
         t3.setText(min+":"+sec);
         MediaMetadataRetriever m= new MediaMetadataRetriever();
         m.setDataSource(songs.get(MainActivity.current));
-        if(MainActivity.th2.isAlive())
-        {
             try {
                 byte[] a = m.getEmbeddedPicture();
                 Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
@@ -199,14 +201,6 @@ public class musicpage extends AppCompatActivity {
                 i1.setImageResource(R.drawable.ic_music_note_black_24dp);
             }
         }
-        else{
-        Bitmap k=bitmapArray.get(MainActivity.current);
-        if(k!=null)
-        i1.setImageBitmap(k);
-        else
-            i1.setBackgroundResource(R.drawable.music);
-    }
-    }
 
     public void shuffle(View View)
     {

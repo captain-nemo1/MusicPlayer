@@ -3,12 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout"
-    android:padding="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp"
     android:background="@color/black"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        android:minHeight="?attr/actionBarSize"
+        app:logo="@drawable/ic_music_note_black_24dp"
+        app:title="Nemo Player"
+        android:id="@+id/toolbar"
+        app:collapseIcon="@drawable/back"
+        android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+        app:titleTextColor="@color/white"
+        />
+
 
     <ListView
         android:id="@+id/list"
@@ -27,7 +43,7 @@
         android:layout_height="0dp"
         android:layout_weight="1.25"
         android:padding="5dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="10dp"
         android:background="@color/black">
 
         <TextView
@@ -60,7 +76,7 @@
             android:layout_marginTop="1dp"
             android:layout_marginRight="40dp"
             android:progressTint="@color/colorPrimaryDark"
-            android:scrollbarSize="10sp"
+            android:scrollbarSize="20sp"
             android:theme="@style/Theme.AppCompat.Light" />
 
         <TextView
@@ -134,14 +150,13 @@
 
         <Button
             android:id="@+id/button2"
-            android:layout_width="45dp"
-            android:layout_height="46dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_below="@+id/repeat"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="50dp"
             android:layout_marginTop="7dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="14dp"
+            android:layout_marginEnd="20dp"
             android:background="@drawable/up"
             android:onClick="Top" />
 

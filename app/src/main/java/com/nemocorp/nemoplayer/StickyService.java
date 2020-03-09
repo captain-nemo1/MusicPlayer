@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
 import android.os.IBinder;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import androidx.annotation.Nullable;
@@ -19,14 +21,14 @@ import static com.nemocorp.nemoplayer.MainActivity.CANCEL_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
-import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.image;
+import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
+import static com.nemocorp.nemoplayer.MainActivity.song_album;
 import static com.nemocorp.nemoplayer.MainActivity.song_artist;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
-import static com.nemocorp.nemoplayer.MainActivity.th2;
 
 public class StickyService extends Service {
     @Nullable
@@ -34,32 +36,29 @@ public class StickyService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
+    static MediaMetadata.Builder mediaMetadataBuilder;
     @Override
     public void onCreate()
     {
     super.onCreate();
+
     }
 
 
     public int onStartCommand(Intent i, int flags, int startId )
     {
-        MediaSessionCompat mediaSession=new MediaSessionCompat(this,"session");
+        mediaMetadataBuilder=new MediaMetadata.Builder();
+        mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, 0);
+        MediaSessionCompat mediaSession=new MediaSessionCompat(getApplicationContext(),"session");
+        mediaSession.setMetadata(MediaMetadataCompat.fromMediaMetadata(mediaMetadataBuilder.build()));
         MediaSessionCompat.Token token=mediaSession.getSessionToken();
         Intent intent = new Intent(this, MainActivity.class);
         intent.setAction(Intent.ACTION_MAIN);
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         Bitmap icon;
-        String s = "Unknown";
         MediaMetadataRetriever m = new MediaMetadataRetriever();
         m.setDataSource(songs.get(current));
-        if (th2.isAlive()) {
-            try {
-                s = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             try {
                 byte[] a = m.getEmbeddedPicture();
                 Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
@@ -67,15 +66,6 @@ public class StickyService extends Service {
             } catch (Exception e) {
                 icon = BitmapFactory.decodeResource(this.getResources(), R.drawable.noicon);
             }
-        } else {
-            s = song_artist.get(current);
-            String k = String.valueOf(bitmapArray.get(current));
-            if (!k.equals("null")) {
-                icon = bitmapArray.get(current);
-            } else {
-                icon = BitmapFactory.decodeResource(this.getResources(), R.drawable.noicon);
-            }
-        }
         Intent yesReceive2 = new Intent(this, NotificationReceiver.class);
         yesReceive2.setAction(PREV_ACTION);
         PendingIntent pendingIntentYes2 = PendingIntent.getBroadcast(this, 12345, yesReceive2, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -92,7 +82,8 @@ public class StickyService extends Service {
                 .setSmallIcon(R.drawable.music)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentTitle(song_name.get(current))
-                .setContentText(s)
+                .setContentText(song_artist.get(current))
+                .setSubText(song_album.get(current))
                 .setLargeIcon(icon)
                 .setColorized(true)
                 .setColor(Color.BLACK)
@@ -102,12 +93,14 @@ public class StickyService extends Service {
                 .addAction(R.drawable.cancel, "Cancel", pendingIntentYes4)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0, 1, 2).setMediaSession(token))
                 .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setOngoing(true);
+                .setOnlyAlertOnce(true)
+                .setTimeoutAfter(mediaPlayer.getDuration())
+                .setShowWhen(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW);
+
         Notification notification= MainActivity.builder.build();
         notificationManager = NotificationManagerCompat.from(this);
         startForeground(101, notification);
-
         super.onStartCommand(i,flags,101);
         return START_NOT_STICKY;
     }

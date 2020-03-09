@@ -21,7 +21,6 @@ import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 import static com.nemocorp.nemoplayer.musicpage.seek;
 
-//import static com.nemocorp.nemoplayer.MainActivity.notification;
 
 public class NotificationReceiver extends BroadcastReceiver {
 
@@ -40,7 +39,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             }
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
-            //notification(context);
+
 
         } else if (PREV_ACTION.equals(action)) {
             if (flag != false) {
