@@ -30,8 +30,9 @@
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="4"
+        android:layout_weight="3"
         android:background="@color/black"
+        android:scrollingCache="true"
         tools:layout_editor_absoluteX="1dp"
         tools:layout_editor_absoluteY="1dp">
 
@@ -41,19 +42,19 @@
         android:id="@+id/r2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1.25"
-        android:padding="5dp"
         android:layout_marginBottom="10dp"
-        android:background="@color/black">
+        android:layout_weight="1.25"
+        android:background="@color/black"
+        android:padding="5dp">
 
         <TextView
             android:id="@+id/starttime"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_alignParentTop="true"
-            android:textColor="@color/white"
             android:layout_marginTop="1dp"
             android:textAlignment="center"
+            android:textColor="@color/white"
             android:textSize="15sp" />
 
         <TextView
@@ -86,11 +87,11 @@
             android:layout_below="@id/seekBar"
             android:layout_marginTop="1dp"
             android:ellipsize="marquee"
-            android:singleLine="true"
             android:gravity="center_horizontal"
             android:hint="@string/song_name"
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
+            android:singleLine="true"
             android:textColor="@color/white"
             android:textSize="24sp" />
 
@@ -155,10 +156,20 @@
             android:layout_below="@+id/repeat"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="50dp"
-            android:layout_marginTop="7dp"
             android:layout_marginEnd="20dp"
             android:background="@drawable/up"
             android:onClick="Top" />
+
+        <Button
+            android:id="@+id/yt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/shuffle"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="20dp"
+            android:layout_toEndOf="@id/next"
+            android:background="@drawable/up"
+            android:onClick="yt" />
 
 
     </RelativeLayout>

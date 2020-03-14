@@ -21,10 +21,12 @@ import static com.nemocorp.nemoplayer.MainActivity.CANCEL_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
+import static com.nemocorp.nemoplayer.MainActivity.REPEAT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.image;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
+import static com.nemocorp.nemoplayer.MainActivity.repeat22;
 import static com.nemocorp.nemoplayer.MainActivity.song_album;
 import static com.nemocorp.nemoplayer.MainActivity.song_artist;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
@@ -76,8 +78,12 @@ public class StickyService extends Service {
         yesReceive3.setAction(NEXT_ACTION);
         PendingIntent pendingIntentYes3 = PendingIntent.getBroadcast(this, 12345, yesReceive3, PendingIntent.FLAG_UPDATE_CURRENT);
         Intent yesReceive4 = new Intent(this, NotificationReceiver.class);
-        yesReceive.setAction(CANCEL_ACTION);
+        yesReceive4.setAction(CANCEL_ACTION);
         PendingIntent pendingIntentYes4 = PendingIntent.getBroadcast(this, 12345, yesReceive4, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent yesReceive5 = new Intent(this, NotificationReceiver.class);
+        yesReceive5.setAction(REPEAT_ACTION);
+        PendingIntent pendingIntentYes5 = PendingIntent.getBroadcast(this, 12345, yesReceive5, PendingIntent.FLAG_UPDATE_CURRENT);
+
         MainActivity.builder = new NotificationCompat.Builder(this, "101")
                 .setSmallIcon(R.drawable.music)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -87,15 +93,15 @@ public class StickyService extends Service {
                 .setLargeIcon(icon)
                 .setColorized(true)
                 .setColor(Color.BLACK)
+                .addAction(repeat22, "Repeat", pendingIntentYes5)
                 .addAction(R.drawable.previous, "Prev", pendingIntentYes2)
                 .addAction(image, "Play/Pause", pendingIntentYes)
                 .addAction(R.drawable.ic_skip_next_black_24dp, "Next", pendingIntentYes3)
                 .addAction(R.drawable.cancel, "Cancel", pendingIntentYes4)
-                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0, 1, 2).setMediaSession(token))
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(1, 2, 3).setMediaSession(token))
                 .setContentIntent(pendingIntent)
                 .setOnlyAlertOnce(true)
                 .setTimeoutAfter(mediaPlayer.getDuration())
-                .setShowWhen(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
 
         Notification notification= MainActivity.builder.build();

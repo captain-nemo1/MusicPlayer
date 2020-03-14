@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -51,9 +52,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-//import android.widget.Toolbar;
 
-
+@SuppressWarnings("ALL")
 public class MainActivity extends AppCompatActivity {
     static TextView t2;
     static TextView t3;
@@ -62,7 +62,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREV_ACTION = "PREV_ACTION";
     public static final String NEXT_ACTION = "NEXT_ACTION";
     public static final String CANCEL_ACTION = "CANCEL_ACTION";
-    ListView list;
+    public static final String REPEAT_ACTION = "REPEAT_ACTION";
+
+    static ListView list;
     PowerManager.WakeLock wakeLock;
     static Button b1, b4, b5;
     static SeekBar s;
@@ -72,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
     static boolean loop = false;
     LinearLayout l1;
     static int image = R.drawable.pause;
+    static int repeat22= R.drawable.repeat;
+
     static boolean flag = false;
     Intent i;
     static boolean shuffle = false;
@@ -86,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> temp2;
     ArrayList<String> temp3;
    static ArrayList<Integer> temp4=new ArrayList<>();;
-
     static ArrayList<Bitmap> bitmapArray = new ArrayList<Bitmap>();
     static List<Long> song_dur = new ArrayList<>();
 
@@ -110,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
                     if (mediaPlayer != null && wantsmusic == true) {
                         Pause1();
                         image=R.drawable.pause;
+                        wantsmusic=true;
                         startService(service);
                     }
                     break;
@@ -165,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
         s.setEnabled(false);
         r = findViewById(R.id.r2);
         checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE, 101);
+        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 102);
         getsong();
         getart();
         service = new Intent(getApplicationContext(), StickyService.class);
@@ -248,16 +253,33 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             public void onSwipeRight() {
+                if (shuffle == true) {
+                    Random r = new Random();
+                    current = r.nextInt(songs.size() - 1);
+                }
                 next1();
             }
 
             public void onSwipeLeft() {
+
+                if (shuffle == true) {
+                    Random r = new Random();
+                    current = r.nextInt(songs.size() - 1);
+                }
                 previous1();
             }
         });
+
     }
 
-    public void createList()
+
+    public void yt(View view)
+    {
+        Intent i=new Intent(this, Ytsearch.class);
+        startActivity(i);
+    }
+
+     public void createList()
     {
         myAdapter madapter=new myAdapter(this,song_name, song_artist,songs);
         list.setAdapter(madapter);
@@ -329,13 +351,12 @@ public class MainActivity extends AppCompatActivity {
        bit.start();
     }
 
-
-
     @Override
     public void onResume()
     {
-        super.onResume();
         fileopen();
+        super.onResume();
+
     }
     public void fileopen() {
         String name="";
@@ -457,6 +478,8 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.setDataSource(getApplicationContext(), mp3);
             mediaPlayer.prepare();
             mediaPlayer.start();
+            if(loop==true)
+            mediaPlayer.setLooping(loop);
             int min = (mediaPlayer.getDuration() / 1000) / 60;
             int sec = (mediaPlayer.getDuration() / 1000) % 60;
             if (sec < 10)
@@ -473,7 +496,10 @@ public class MainActivity extends AppCompatActivity {
     }
     static public void createThread() {
         String path = songs.get(current);
+        if(!song_artist.get(current).equals("<unknown>"))
         t2.setText(song_artist.get(current)+"-"+song_name.get(current));
+        else
+            t2.setText(song_name.get(current));
         t2.setVisibility(View.VISIBLE);
         t2.setSelected(true);
         if (t.isAlive())
@@ -524,6 +550,10 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 current = current - 1;
             }
+            if (shuffle == true) {
+                Random r = new Random();
+                current = r.nextInt(songs.size() - 1);
+            }
             String prevsong = songs.get(current);
             stopifSongPlaying();
             media(prevsong);
@@ -540,6 +570,10 @@ public class MainActivity extends AppCompatActivity {
                 current = 0;
             else
                 current = current + 1;
+            if (shuffle == true) {
+                Random r = new Random();
+                current = r.nextInt(songs.size() - 1);
+            }
             String nextsong = songs.get(current);
             stopifSongPlaying();
             media(nextsong);
@@ -548,6 +582,7 @@ public class MainActivity extends AppCompatActivity {
             return;
     }
     public void next(View view) {
+
         next1();
     }
     static public void repeat1() {
@@ -555,15 +590,20 @@ public class MainActivity extends AppCompatActivity {
             loop = true;
             mediaPlayer.setLooping(loop);
             b4.setBackgroundResource(R.drawable.donot);
+            repeat22=R.drawable.donot;
         } else {
             loop = false;
             mediaPlayer.setLooping(loop);
             b4.setBackgroundResource(R.drawable.repeat);
+            repeat22=R.drawable.repeat;
         }
+
     }
-    static public void repeat(View view) {
+     public void repeat(View view) {
         repeat1();
-    }
+        startService(service);
+
+     }
     public void checkPermission(String permission, int requestCode) {
         if (ContextCompat.checkSelfPermission(MainActivity.this, permission)
                 == PackageManager.PERMISSION_DENIED) {
@@ -582,12 +622,18 @@ public class MainActivity extends AppCompatActivity {
                         "Storage Permission Granted",
                         Toast.LENGTH_SHORT)
                         .show();
+                PackageManager packageManager = this.getPackageManager();
+                Intent intent = packageManager.getLaunchIntentForPackage(this.getPackageName());
+                ComponentName componentName = intent.getComponent();
+                Intent mainIntent = Intent.makeRestartActivityTask(componentName);
+                this.startActivity(mainIntent);
+                Runtime.getRuntime().exit(0);
             } else {
                 Toast.makeText(MainActivity.this, "Storage Permission Denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
-    public void getsong() {
+   public void getsong() {
 
         String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
         ContentResolver contentResolver = this.getContentResolver();

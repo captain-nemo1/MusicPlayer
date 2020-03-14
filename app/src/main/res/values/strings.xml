@@ -3,5 +3,6 @@
     <string name="song_name">Song Name</string>
     <string name="description">Music Player</string>
     <string name="hint">Search</string>
+    <string name="find">Finding</string>
 
 </resources>

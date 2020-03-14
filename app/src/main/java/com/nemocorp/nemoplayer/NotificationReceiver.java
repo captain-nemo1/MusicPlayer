@@ -6,17 +6,23 @@ import android.content.Intent;
 import android.net.Uri;
 
 import java.io.IOException;
+import java.util.Random;
 
 import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
+import static com.nemocorp.nemoplayer.MainActivity.REPEAT_ACTION;
+import static com.nemocorp.nemoplayer.MainActivity.b4;
 import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.flag;
 import static com.nemocorp.nemoplayer.MainActivity.image;
 import static com.nemocorp.nemoplayer.MainActivity.k1;
+import static com.nemocorp.nemoplayer.MainActivity.loop;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
+import static com.nemocorp.nemoplayer.MainActivity.repeat22;
+import static com.nemocorp.nemoplayer.MainActivity.shuffle;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 import static com.nemocorp.nemoplayer.musicpage.seek;
@@ -39,20 +45,24 @@ public class NotificationReceiver extends BroadcastReceiver {
             }
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
-
-
         } else if (PREV_ACTION.equals(action)) {
             if (flag != false) {
                 if(current==0)
                     current=0;
                 else
                 current = current - 1;
+                if (shuffle == true) {
+                    Random r = new Random();
+                    current = r.nextInt(songs.size() - 1);
+                }
                 if (mediaPlayer != null)
                     mediaPlayer.reset();
                 try {
                     mediaPlayer.setDataSource(context, Uri.parse(songs.get(current)));
                     mediaPlayer.prepare();
                     mediaPlayer.start();
+                    if(loop==true)
+                        mediaPlayer.setLooping(true);
                     MainActivity.createThread();
                     Intent service=new Intent(context, StickyService.class);
                     context.startService(service);
@@ -69,12 +79,18 @@ public class NotificationReceiver extends BroadcastReceiver {
                         current =0;
                     else
                         current=current+1;
+                    if (shuffle == true) {
+                        Random r = new Random();
+                        current = r.nextInt(songs.size() - 1);
+                    }
                     if(mediaPlayer!=null)
                         mediaPlayer.reset();
                     try {
                         mediaPlayer.setDataSource(context, Uri.parse(songs.get(current)));
                         mediaPlayer.prepare();
                         mediaPlayer.start();
+                        if(loop==true)
+                            mediaPlayer.setLooping(true);
                         MainActivity.createThread();
                         Intent service=new Intent(context, StickyService.class);
                         context.startService(service);
@@ -86,6 +102,26 @@ public class NotificationReceiver extends BroadcastReceiver {
                     if(k1==1)
                     {changephotoactivity2();}
             }
+        }
+        else if(REPEAT_ACTION.equals(action))
+        {
+            if(loop==false)
+            {
+                loop=true;
+                mediaPlayer.setLooping(loop);
+                repeat22=R.drawable.donot;
+                b4.setBackgroundResource(repeat22);
+            }
+            else
+            {
+                loop=false;
+                mediaPlayer.setLooping(loop);
+                repeat22=R.drawable.repeat;
+                b4.setBackgroundResource(repeat22);
+
+            }
+            Intent service=new Intent(context, StickyService.class);
+            context.startService(service);
         }
         else {
             notificationManager.cancel(101);

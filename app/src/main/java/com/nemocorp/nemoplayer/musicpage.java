@@ -20,6 +20,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.util.Random;
 
 import static com.nemocorp.nemoplayer.MainActivity.Pause1;
 import static com.nemocorp.nemoplayer.MainActivity.current;
@@ -63,7 +64,10 @@ public class musicpage extends AppCompatActivity {
         c1=findViewById(R.id.lay);
         i1=findViewById(R.id.image);
         th=new Thread();
-        t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+        if(!song_artist.get(current).equals("<unknown>"))
+            t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+        else
+            t1.setText(song_name.get(current));
         check();
         service=new Intent(this, StickyService.class);
         Handler handler=new Handler();
@@ -97,6 +101,10 @@ public class musicpage extends AppCompatActivity {
                             current =0;
                         else
                         current=current+1;
+                            if (shuffle == true) {
+                                Random r = new Random();
+                                current = r.nextInt(songs.size() - 1);
+                            }
                             Log.d("thiss111", String.valueOf(current));
                         if(mediaPlayer!=null)
                             mediaPlayer.reset();
@@ -104,6 +112,8 @@ public class musicpage extends AppCompatActivity {
                             mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
                             mediaPlayer.prepare();
                             mediaPlayer.start();
+                            if(loop==true)
+                                mediaPlayer.setLooping(true);
                             MainActivity.createThread();
                             startService(service);
                         }
@@ -118,7 +128,10 @@ public class musicpage extends AppCompatActivity {
                             t3.setText(min+":0"+sec);
                         t2.setText("0:00");
                         seek();
-                        t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+                            if(!song_artist.get(current).equals("<unknown>"))
+                                t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+                            else
+                                t1.setText(song_name.get(current));
                         MediaMetadataRetriever m= new MediaMetadataRetriever();
                         m.setDataSource(songs.get(MainActivity.current));
                         try {
@@ -136,6 +149,10 @@ public class musicpage extends AppCompatActivity {
                         if(flag!=false) {
                             if(current!=0)
                                 current=current-1;
+                            if (shuffle == true) {
+                                Random r = new Random();
+                                current = r.nextInt(songs.size() - 1);
+                            }
 
                         if(mediaPlayer!=null)
                             mediaPlayer.reset();
@@ -144,6 +161,8 @@ public class musicpage extends AppCompatActivity {
                             mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
                             mediaPlayer.prepare();
                             mediaPlayer.start();
+                            if(loop==true)
+                                mediaPlayer.setLooping(true);
                             MainActivity.createThread();
                             startService(service);
                         }
@@ -158,7 +177,10 @@ public class musicpage extends AppCompatActivity {
                             t3.setText(min+":0"+sec);
                         t2.setText("0:00");
                         seek();
-                        t1.setText(song_name.get(current));
+                            if(!song_artist.get(current).equals("<unknown>"))
+                                t1.setText(song_artist.get(current)+"-"+song_name.get(current));
+                            else
+                                t1.setText(song_name.get(current));
                         MediaMetadataRetriever m= new MediaMetadataRetriever();
                         m.setDataSource(songs.get(MainActivity.current));
                         try {
