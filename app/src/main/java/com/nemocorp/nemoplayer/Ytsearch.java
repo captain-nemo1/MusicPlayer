@@ -1,16 +1,13 @@
 package com.nemocorp.nemoplayer;
 
 import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -48,7 +45,6 @@ public class Ytsearch extends AppCompatActivity {
     static List<String> title=new ArrayList<>();
     static List<String> id=new ArrayList<>();
     static List<String> dur=new ArrayList<>();
-
     String s;
     List<Stream> videoStreams;
     @Override
@@ -58,29 +54,30 @@ public class Ytsearch extends AppCompatActivity {
         b1=findViewById(R.id.button4);
         search=findViewById(R.id.search);
         result=findViewById(R.id.result);
-
-
-
     }
-    public void result(View view){
+    public void result(View view) {
+        b1.setText(R.string.search_button);
         title.clear();
         id.clear();
-        b1.setBackgroundColor(Color.GRAY);
-        s=String.valueOf(search.getText());
+        s = String.valueOf(search.getText());
         scrap();
 
-      result.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        result.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                result.setDrawSelectorOnTop(false);
                 Toast.makeText(getApplicationContext(), "Freeze Time depends on your internet connection", Toast.LENGTH_SHORT).show();
-                t2=new Thread(){
+                t2 = new Thread() {
                     @Override
-                    public void run()
-                    {
+                    public void run() {
                         final YouTubeExtractor extractor1 = new YouTubeExtractor.Builder().build();
-                        String s=id.get(i);
-                        s=s.substring(s.indexOf('=')+1, s.length());
+                        String s = id.get(i);
+                        s = s.substring(s.indexOf('=') + 1, s.length());
                         final Disposable y = extractor1.extract(s)
                                 .subscribe(new Consumer<YouTubeExtraction>() {
                                     @Override
@@ -94,37 +91,25 @@ public class Ytsearch extends AppCompatActivity {
                 t2.start();
                 try {
                     t2.join();
-                    Log.d("values", String.valueOf(videoStreams.get(videoStreams.size()-4)));
+                    Log.d("values", String.valueOf(videoStreams.get(videoStreams.size() - 4)));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                String url= String.valueOf(videoStreams.get(videoStreams.size()-4));
-                url=url.substring(url.indexOf('h'),url.lastIndexOf(','));
+                String url = String.valueOf(videoStreams.get(videoStreams.size() - 4));
+                url = url.substring(url.indexOf('h'), url.lastIndexOf(','));
                 DownloadManager downloadmanager = (DownloadManager) getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
                 Uri uri = Uri.parse(url);
                 DownloadManager.Request request = new DownloadManager.Request(uri);
                 request.setDescription("Downloading");
-                request.setTitle(title.get(i)+".m4a");
+                request.setTitle(title.get(i) + ".m4a");
                 request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                filetitle=title.get(i)+".m4a";
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filetitle);
+                filetitle = title.get(i) + ".m4a";
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_MUSIC, filetitle);
                 downloadmanager.enqueue(request);
+                MainActivity.download_finished=1;
+                MainActivity.downloadfinished(getApplicationContext());
             }
         });
-
-       BroadcastReceiver onComplete=new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Toast.makeText(context,"Close and Open App to get the downloaded song in list", Toast.LENGTH_SHORT).show();
-            }
-        };
-
-        registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-
-    }
-    public void click(View view)
-    {
-        String path=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+"/"+"juicy.mp4";
     }
 
     public void scrap()
@@ -151,7 +136,6 @@ public class Ytsearch extends AppCompatActivity {
                       } catch (Exception e) {
                           e.printStackTrace();
                       }
-
               }
           }
         };
@@ -163,7 +147,6 @@ public class Ytsearch extends AppCompatActivity {
         }
         ytsearchadapter yt= new ytsearchadapter(this, title,dur);
         result.setAdapter(yt);
-
     }
 
     @Override
@@ -172,5 +155,6 @@ public class Ytsearch extends AppCompatActivity {
         title.clear();
         id.clear();
         super.onBackPressed();
+        overridePendingTransition(R.anim.nothing,R.anim.bottom_down);
     }
 }

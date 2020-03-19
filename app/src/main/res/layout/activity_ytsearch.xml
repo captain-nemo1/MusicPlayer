@@ -13,7 +13,9 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.25"
-        android:hint="Enter Youtube Search Here"
+        android:autofillHints=""
+        android:hint="@string/search"
+        android:inputType="text"
         android:textColor="@color/white"
         android:textColorHint="@color/white" />
 
@@ -23,18 +25,11 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.25"
-        android:background="@color/black"
         android:onClick="result"
-        android:text="Search"
+        android:backgroundTint="@color/selector2"
+        android:text="@string/search_button"
         android:textColor="@color/white" />
 
-    <Button
-        android:id="@+id/button5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="click"
-        android:text="Button"
-        android:visibility="gone" />
 
     <ListView
         android:id="@+id/result"
@@ -46,5 +41,6 @@
         >
 
     </ListView>
+
 
 </LinearLayout>

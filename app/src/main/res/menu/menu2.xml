@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_player"
+        android:icon="@drawable/player"
+        android:enabled="true"
+        android:title="Player"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_downloader"
+        android:icon="@drawable/downloader"
+        android:enabled="true"
+        android:title="Downloader"
+        app:showAsAction="always" />
+</menu>

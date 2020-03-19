@@ -4,5 +4,7 @@
     <string name="description">Music Player</string>
     <string name="hint">Search</string>
     <string name="find">Finding</string>
+    <string name="search">Enter Youtube Search Here</string>
+    <string name="search_button">Search</string>
 
 </resources>

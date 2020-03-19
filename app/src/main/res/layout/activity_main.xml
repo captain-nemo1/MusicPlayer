@@ -3,8 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout"
-    android:paddingLeft="10dp"
-    android:paddingRight="10dp"
     android:paddingTop="10dp"
     android:background="@color/black"
     android:layout_width="match_parent"
@@ -30,7 +28,7 @@
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="3"
+        android:layout_weight="2.95"
         android:background="@color/black"
         android:scrollingCache="true"
         tools:layout_editor_absoluteX="1dp"
@@ -42,10 +40,10 @@
         android:id="@+id/r2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="10dp"
-        android:layout_weight="1.25"
+        android:layout_weight=".95"
         android:background="@color/black"
-        android:padding="5dp">
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp">
 
         <TextView
             android:id="@+id/starttime"
@@ -148,30 +146,17 @@
             android:layout_toEndOf="@id/play"
             android:background="@drawable/ic_skip_next_black_24dp"
             android:onClick="next" />
-
-        <Button
-            android:id="@+id/button2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/repeat"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="20dp"
-            android:background="@drawable/up"
-            android:onClick="Top" />
-
-        <Button
-            android:id="@+id/yt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/shuffle"
-            android:layout_alignParentBottom="true"
-            android:layout_marginEnd="20dp"
-            android:layout_toEndOf="@id/next"
-            android:background="@drawable/up"
-            android:onClick="yt" />
-
-
     </RelativeLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight=".35"
+        app:menu="@menu/menu2"
+        app:itemTextColor="@color/white"
+        android:layout_gravity="bottom|center"
+        app:itemIconTint="@color/white"
+        />
 
 </LinearLayout>

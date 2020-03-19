@@ -12,7 +12,7 @@
         android:layout_row="0"
         android:layout_column="0"
         android:layout_columnWeight="1"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/selector"
         android:textSize="20sp"
         android:layout_marginTop="5dp"
         />
@@ -24,7 +24,7 @@
         android:layout_row="1"
         android:layout_column="0"
         android:layout_columnWeight="1"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/selector"
         android:textSize="15sp"
         android:layout_marginBottom="8dp"/>
 </GridLayout>

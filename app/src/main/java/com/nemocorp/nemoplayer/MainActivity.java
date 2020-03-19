@@ -2,12 +2,15 @@ package com.nemocorp.nemoplayer;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -26,6 +29,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,6 +50,8 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.MenuItemCompat;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,8 +81,8 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout l1;
     static int image = R.drawable.pause;
     static int repeat22= R.drawable.repeat;
-
     static boolean flag = false;
+    static int download_finished=0;
     Intent i;
     static boolean shuffle = false;
     static MediaPlayer mediaPlayer;
@@ -101,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
     static boolean wantsmusic;
     static int k1 = 0;
     int first = 0;
+    BottomNavigationView bv;
     Intent e;
     MediaMetadataRetriever metaRetriver;
     AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -165,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
         b5 = findViewById(R.id.shuffle);
         b1.setVisibility(View.INVISIBLE);
         t2.setVisibility(View.INVISIBLE);
+        bv=findViewById(R.id.bottom_view);
         s = findViewById(R.id.seekBar);
         s.setEnabled(false);
         r = findViewById(R.id.r2);
@@ -186,6 +194,12 @@ public class MainActivity extends AppCompatActivity {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                try {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 if(temp4.size()>0)
                 {
                     position= temp4.get(position);
@@ -269,15 +283,43 @@ public class MainActivity extends AppCompatActivity {
                 previous1();
             }
         });
+        bv.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                switch(menuItem.getItemId())
+                {
+                    case R.id.action_downloader:
+                        Intent i=new Intent(getApplicationContext(), Ytsearch.class);
+                        startActivity(i);
+                        overridePendingTransition(R.anim.bottom_up, R.anim.nothing);
+                        break;
+                    case R.id.action_player:
+                        if (first != 0) {
+                        Intent i2=new Intent(getApplicationContext(), musicpage.class);
+                        i2.putExtra("name", song_name.get(current));
+                        int k = mediaPlayer.getCurrentPosition();
+                        i2.putExtra("prog", String.valueOf(k));
+                        String s = songs.get(current);
+                        i2.putExtra("art", s);
+                        startActivity(i2);
+                        overridePendingTransition(R.anim.bottom_up, R.anim.nothing);
+                        break;
+                };
+            } return true;
+        }});
+    }
+    static public void downloadfinished(Context ctx){
+        BroadcastReceiver onComplete=new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Toast.makeText(context,"Close and Open App to get the downloaded song in list", Toast.LENGTH_SHORT).show();
+                download_finished=0;
+            }
+        };
 
+        ctx.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
-
-    public void yt(View view)
-    {
-        Intent i=new Intent(this, Ytsearch.class);
-        startActivity(i);
-    }
 
      public void createList()
     {
@@ -350,10 +392,11 @@ public class MainActivity extends AppCompatActivity {
         };
        bit.start();
     }
-
     @Override
     public void onResume()
     {
+        if(download_finished==1)
+            downloadfinished(this);
         fileopen();
         super.onResume();
 
@@ -386,19 +429,6 @@ public class MainActivity extends AppCompatActivity {
             e.setData(null);
         }
     }
-    public void Top(View view) {
-        if (first != 0) {
-            i.putExtra("name", song_name.get(current));
-            int k = mediaPlayer.getCurrentPosition();
-            i.putExtra("prog", String.valueOf(k));
-            String s = songs.get(current);
-            i.putExtra("art", s);
-            startActivity(i);
-            overridePendingTransition(R.anim.bottom_up, R.anim.nothing);
-        }
-    }
-
-
 
     public void check() {
         if (MainActivity.flag == true)
