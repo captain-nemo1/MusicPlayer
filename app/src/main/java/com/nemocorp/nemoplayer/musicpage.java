@@ -18,6 +18,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.palette.graphics.Palette;
 
 import java.io.IOException;
 import java.util.Random;
@@ -138,15 +139,22 @@ public class musicpage extends AppCompatActivity {
                             byte[] a = m.getEmbeddedPicture();
                             Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
                             i1.setImageBitmap(c);
+                            background(c);
                         } catch (Exception e) {
                             i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-                            }
+                            c1.setBackgroundColor(getResources().getColor(R.color.black));
+                            b2.setBackgroundColor(getResources().getColor(R.color.black));
+                            t1.setTextColor(getResources().getColor(R.color.white));
+
+                        }
+
                         }
                     }
 
                     public void onSwipeLeft()
                     {
                         if(flag!=false) {
+
                             if(current!=0)
                                 current=current-1;
                             if (shuffle == true) {
@@ -154,43 +162,48 @@ public class musicpage extends AppCompatActivity {
                                 current = r.nextInt(songs.size() - 1);
                             }
 
-                        if(mediaPlayer!=null)
-                            mediaPlayer.reset();
-                        Log.d("thiss", String.valueOf(current));
-                        try {
-                            mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
-                            mediaPlayer.prepare();
-                            mediaPlayer.start();
-                            if(loop==true)
-                                mediaPlayer.setLooping(true);
-                            MainActivity.createThread();
-                            startService(service);
-                        }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        int min=(mediaPlayer.getDuration()/1000)/60;
-                        int sec=(mediaPlayer.getDuration()/1000)%60;
-                        if(sec>=10)
-                            t3.setText(min+":"+sec);
-                        else
-                            t3.setText(min+":0"+sec);
-                        t2.setText("0:00");
-                        seek();
+                            if(mediaPlayer!=null)
+                                mediaPlayer.reset();
+                            Log.d("thiss", String.valueOf(current));
+                            try {
+                                mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
+                                mediaPlayer.prepare();
+                                mediaPlayer.start();
+                                if(loop==true)
+                                    mediaPlayer.setLooping(true);
+                                MainActivity.createThread();
+                                startService(service);
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            int min=(mediaPlayer.getDuration()/1000)/60;
+                            int sec=(mediaPlayer.getDuration()/1000)%60;
+                            if(sec>=10)
+                                t3.setText(min+":"+sec);
+                            else
+                                t3.setText(min+":0"+sec);
+                            t2.setText("0:00");
+                            seek();
                             if(!song_artist.get(current).equals("<unknown>"))
                                 t1.setText(song_artist.get(current)+"-"+song_name.get(current));
                             else
                                 t1.setText(song_name.get(current));
-                        MediaMetadataRetriever m= new MediaMetadataRetriever();
-                        m.setDataSource(songs.get(MainActivity.current));
-                        try {
-                            byte[] a = m.getEmbeddedPicture();
-                            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                            i1.setImageBitmap(c);
-                        } catch (Exception e) {
-                            i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                            MediaMetadataRetriever m= new MediaMetadataRetriever();
+                            m.setDataSource(songs.get(MainActivity.current));
+                            try {
+                                byte[] a = m.getEmbeddedPicture();
+                                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                                i1.setImageBitmap(c);
+                                background(c);
+                            } catch (Exception e) {
+                                i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                                c1.setBackgroundColor(getResources().getColor(R.color.black));
+                                b2.setBackgroundColor(getResources().getColor(R.color.black));
+                                t1.setTextColor(getResources().getColor(R.color.white));
+                            }
                         }
-                    }}
+                    }
                 });
 
             }
@@ -219,10 +232,35 @@ public class musicpage extends AppCompatActivity {
                 byte[] a = m.getEmbeddedPicture();
                 Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
                 i1.setImageBitmap(c);
+                background(c);
             } catch (Exception e) {
                 i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                c1.setBackgroundColor(getResources().getColor(R.color.black));
+                b2.setBackgroundColor(getResources().getColor(R.color.black));
+                t1.setTextColor(getResources().getColor(R.color.white));
+                MainActivity.r.setBackgroundColor(getResources().getColor(R.color.black));
+
             }
         }
+
+    public Palette createPaletteSync(Bitmap bitmap) {
+        Palette p = Palette.from(bitmap).generate();
+        return p;
+    }
+
+     public void background(Bitmap c)
+     {
+         Palette p = createPaletteSync(c);
+         Palette.Swatch vibrantSwatch = p.getDominantSwatch();
+         int backgroundColor;
+         int titlecolor;
+           backgroundColor = vibrantSwatch.getRgb();
+           titlecolor=vibrantSwatch.getBodyTextColor();
+             c1.setBackgroundColor(backgroundColor);
+             b2.setBackgroundColor(backgroundColor);
+             t1.setTextColor(titlecolor);
+
+     }
 
     public void shuffle(View View)
     {

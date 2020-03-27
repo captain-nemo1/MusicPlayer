@@ -12,7 +12,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -71,12 +70,12 @@ public class Ytsearch extends AppCompatActivity {
         result.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Toast.makeText(getApplicationContext(), "Freeze Time depends on your internet connection", Toast.LENGTH_SHORT).show();
+                final int k=i;
                 t2 = new Thread() {
                     @Override
                     public void run() {
                         final YouTubeExtractor extractor1 = new YouTubeExtractor.Builder().build();
-                        String s = id.get(i);
+                        String s = id.get(k);
                         s = s.substring(s.indexOf('=') + 1, s.length());
                         final Disposable y = extractor1.extract(s)
                                 .subscribe(new Consumer<YouTubeExtraction>() {
@@ -91,11 +90,11 @@ public class Ytsearch extends AppCompatActivity {
                 t2.start();
                 try {
                     t2.join();
-                    Log.d("values", String.valueOf(videoStreams.get(videoStreams.size() - 4)));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 String url = String.valueOf(videoStreams.get(videoStreams.size() - 4));
+                Log.d("values", url);
                 url = url.substring(url.indexOf('h'), url.lastIndexOf(','));
                 DownloadManager downloadmanager = (DownloadManager) getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
                 Uri uri = Uri.parse(url);
@@ -111,7 +110,6 @@ public class Ytsearch extends AppCompatActivity {
             }
         });
     }
-
     public void scrap()
     {
         t1=new Thread()
@@ -121,8 +119,9 @@ public class Ytsearch extends AppCompatActivity {
           {
               Document doc = null;
               try {
-                  doc = Jsoup.connect("https://www.youtube.com/results?search_query="+s).get();
+                  doc = Jsoup.connect("https://www.youtube.com/results?search_query="+s).timeout(200000).get();
               } catch (IOException e) {
+                  Log.d("values", String.valueOf(e));
                   e.printStackTrace();
               }
               Elements Headlines = doc.select("h3");
@@ -137,6 +136,7 @@ public class Ytsearch extends AppCompatActivity {
                           e.printStackTrace();
                       }
               }
+
           }
         };
         t1.start();

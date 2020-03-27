@@ -76,9 +76,9 @@ public class MainActivity extends AppCompatActivity {
     static SeekBar s;
     static int current;
     final String CHANNEL_ID = "101";
-    RelativeLayout r;
+    static RelativeLayout r;
     static boolean loop = false;
-    LinearLayout l1;
+    static LinearLayout l1;
     static int image = R.drawable.pause;
     static int repeat22= R.drawable.repeat;
     static boolean flag = false;
@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
     static boolean wantsmusic;
     static int k1 = 0;
     int first = 0;
-    BottomNavigationView bv;
+    static BottomNavigationView bv;
     Intent e;
     MediaMetadataRetriever metaRetriver;
     AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -188,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
         t = new Thread();
         i = new Intent(MainActivity.this, musicpage.class);
         l1 = findViewById(R.id.layout);
+        r=findViewById(R.id.r2);
         mediaPlayer = new MediaPlayer();
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         createList();
@@ -336,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
       ImageView searchclose=sv.findViewById(androidx.appcompat.R.id.search_close_btn);
       searchclose.setImageResource(R.drawable.close);
       txtSearch.setTextColor(Color.WHITE);
-      txtSearch.setHint("Search by Title");
+      txtSearch.setHint("Search by Title Or Artist");
       txtSearch.setHintTextColor(Color.WHITE);
       sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
           @Override
@@ -352,8 +353,9 @@ public class MainActivity extends AppCompatActivity {
               temp4=new ArrayList<>();
               for(int i=0;i<song_name.size();i++) {
                   String temp1=song_name.get(i);
-                  if (temp1.toLowerCase().contains(s.toLowerCase())) {
-                      temp.add(temp1);
+                  String temp21=song_artist.get(i);
+                  if (temp1.toLowerCase().contains(s.toLowerCase())||temp21.toLowerCase().contains(s.toLowerCase())) {
+                      temp.add(song_name.get(i));
                       temp2.add(song_artist.get(i));
                       temp3.add(songs.get(i));
                       temp4.add(i);
