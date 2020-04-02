@@ -6,5 +6,7 @@
     <string name="find">Finding</string>
     <string name="search">Enter Youtube Search Here</string>
     <string name="search_button">Search</string>
+    <string name="download">Download</string>
+    <string name="stream">Stream</string>
 
 </resources>

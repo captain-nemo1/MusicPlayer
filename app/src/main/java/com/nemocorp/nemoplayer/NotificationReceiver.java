@@ -3,7 +3,6 @@ package com.nemocorp.nemoplayer;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 
 import java.io.IOException;
 import java.util.Random;
@@ -46,34 +45,40 @@ public class NotificationReceiver extends BroadcastReceiver {
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
         } else if (PREV_ACTION.equals(action)) {
-            if (flag != false) {
-                if(current==0)
-                    current=0;
-                else
-                current = current - 1;
-                if (shuffle == true) {
-                    Random r = new Random();
-                    current = r.nextInt(songs.size() - 1);
+            if(!Ytsearch.streaming) {
+                if (flag != false) {
+                    if (current == 0)
+                        current = 0;
+                    else
+                        current = current - 1;
+                    if (shuffle == true) {
+                        Random r = new Random();
+                        current = r.nextInt(songs.size() - 1);
+                    }
+                    if (mediaPlayer != null)
+                        mediaPlayer.reset();
+                    try {
+                        mediaPlayer.setDataSource(songs.get(current));
+                        mediaPlayer.prepare();
+                        mediaPlayer.start();
+                        if (loop == true)
+                            mediaPlayer.setLooping(true);
+                        MainActivity.details();
+                        MainActivity.createThread();
+                        Intent service = new Intent(context, StickyService.class);
+                        context.startService(service);
+                        //notification(context);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if (k1 == 1) {
+                        changephotoactivity2();
+                    }
                 }
-                if (mediaPlayer != null)
-                    mediaPlayer.reset();
-                try {
-                    mediaPlayer.setDataSource(context, Uri.parse(songs.get(current)));
-                    mediaPlayer.prepare();
-                    mediaPlayer.start();
-                    if(loop==true)
-                        mediaPlayer.setLooping(true);
-                    MainActivity.createThread();
-                    Intent service=new Intent(context, StickyService.class);
-                    context.startService(service);
-                    //notification(context);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if(k1==1)
-                {changephotoactivity2();}}
+            }
             } else if(NEXT_ACTION.equals(action))
             {
+                if(!Ytsearch.streaming) {
                 if(flag!=false) {
                     if (current == songs.size() - 1)
                         current =0;
@@ -86,11 +91,12 @@ public class NotificationReceiver extends BroadcastReceiver {
                     if(mediaPlayer!=null)
                         mediaPlayer.reset();
                     try {
-                        mediaPlayer.setDataSource(context, Uri.parse(songs.get(current)));
+                        mediaPlayer.setDataSource(songs.get(current));
                         mediaPlayer.prepare();
                         mediaPlayer.start();
                         if(loop==true)
                             mediaPlayer.setLooping(true);
+                        MainActivity.details();
                         MainActivity.createThread();
                         Intent service=new Intent(context, StickyService.class);
                         context.startService(service);
@@ -101,6 +107,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                     }
                     if(k1==1)
                     {changephotoactivity2();}
+                    }
             }
         }
         else if(REPEAT_ACTION.equals(action))

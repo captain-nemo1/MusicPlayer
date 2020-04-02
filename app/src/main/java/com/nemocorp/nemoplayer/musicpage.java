@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -38,7 +37,7 @@ import static com.nemocorp.nemoplayer.MainActivity.songs;
 
 public class musicpage extends AppCompatActivity {
 
-    static TextView t1,t2,t3;
+    static TextView t1,t2,t3,t4;
     static SeekBar s2;
     static Button b1,b3,b4;
     ImageButton b2;
@@ -55,6 +54,8 @@ public class musicpage extends AppCompatActivity {
         setContentView(R.layout.activity_musicpage);
         i = getIntent();
         t1 = findViewById(R.id.t1);
+        t1.setSelected(true);
+        t4=findViewById(R.id.t2);
         b1 = findViewById(R.id.button);
         b2=findViewById(R.id.button3);
         b3=findViewById(R.id.repeat);
@@ -66,9 +67,14 @@ public class musicpage extends AppCompatActivity {
         i1=findViewById(R.id.image);
         th=new Thread();
         if(!song_artist.get(current).equals("<unknown>"))
-            t1.setText(song_artist.get(current)+"-"+song_name.get(current));
-        else
+        {
             t1.setText(song_name.get(current));
+            t4.setText(song_artist.get(current));
+        }
+        else
+        { t1.setText(song_name.get(current));
+          t4.setText("");
+        }
         check();
         service=new Intent(this, StickyService.class);
         Handler handler=new Handler();
@@ -97,7 +103,6 @@ public class musicpage extends AppCompatActivity {
                     }
                     public void onSwipeRight() {
                         if(flag!=false) {
-
                         if (current == songs.size() - 1)
                             current =0;
                         else
@@ -110,11 +115,12 @@ public class musicpage extends AppCompatActivity {
                         if(mediaPlayer!=null)
                             mediaPlayer.reset();
                         try {
-                            mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
+                            mediaPlayer.setDataSource(songs.get(current));
                             mediaPlayer.prepare();
                             mediaPlayer.start();
                             if(loop==true)
                                 mediaPlayer.setLooping(true);
+                            MainActivity.details();
                             MainActivity.createThread();
                             startService(service);
                         }
@@ -129,10 +135,14 @@ public class musicpage extends AppCompatActivity {
                             t3.setText(min+":0"+sec);
                         t2.setText("0:00");
                         seek();
-                            if(!song_artist.get(current).equals("<unknown>"))
-                                t1.setText(song_artist.get(current)+"-"+song_name.get(current));
-                            else
+                            if(!song_artist.get(current).equals("<unknown>")) {
                                 t1.setText(song_name.get(current));
+                                t4.setText(song_artist.get(current));
+                            }
+                            else {
+                                t1.setText(song_name.get(current));
+                                t4.setText("");
+                            }
                         MediaMetadataRetriever m= new MediaMetadataRetriever();
                         m.setDataSource(songs.get(MainActivity.current));
                         try {
@@ -145,9 +155,9 @@ public class musicpage extends AppCompatActivity {
                             c1.setBackgroundColor(getResources().getColor(R.color.black));
                             b2.setBackgroundColor(getResources().getColor(R.color.black));
                             t1.setTextColor(getResources().getColor(R.color.white));
+                            t4.setTextColor(getResources().getColor(R.color.white));
 
                         }
-
                         }
                     }
 
@@ -166,11 +176,12 @@ public class musicpage extends AppCompatActivity {
                                 mediaPlayer.reset();
                             Log.d("thiss", String.valueOf(current));
                             try {
-                                mediaPlayer.setDataSource(musicpage.this, Uri.parse(songs.get(current)));
+                                mediaPlayer.setDataSource(songs.get(current));
                                 mediaPlayer.prepare();
                                 mediaPlayer.start();
                                 if(loop==true)
                                     mediaPlayer.setLooping(true);
+                                MainActivity.details();
                                 MainActivity.createThread();
                                 startService(service);
                             }
@@ -185,10 +196,14 @@ public class musicpage extends AppCompatActivity {
                                 t3.setText(min+":0"+sec);
                             t2.setText("0:00");
                             seek();
-                            if(!song_artist.get(current).equals("<unknown>"))
-                                t1.setText(song_artist.get(current)+"-"+song_name.get(current));
-                            else
+                            if(!song_artist.get(current).equals("<unknown>")) {
                                 t1.setText(song_name.get(current));
+                                t4.setText(song_artist.get(current));
+                            }
+                            else
+                            { t1.setText(song_name.get(current));
+                                t4.setText("");
+                            }
                             MediaMetadataRetriever m= new MediaMetadataRetriever();
                             m.setDataSource(songs.get(MainActivity.current));
                             try {
@@ -201,6 +216,7 @@ public class musicpage extends AppCompatActivity {
                                 c1.setBackgroundColor(getResources().getColor(R.color.black));
                                 b2.setBackgroundColor(getResources().getColor(R.color.black));
                                 t1.setTextColor(getResources().getColor(R.color.white));
+                                t4.setTextColor(getResources().getColor(R.color.white));
                             }
                         }
                     }
@@ -238,6 +254,7 @@ public class musicpage extends AppCompatActivity {
                 c1.setBackgroundColor(getResources().getColor(R.color.black));
                 b2.setBackgroundColor(getResources().getColor(R.color.black));
                 t1.setTextColor(getResources().getColor(R.color.white));
+                t4.setTextColor(getResources().getColor(R.color.white));
                 MainActivity.r.setBackgroundColor(getResources().getColor(R.color.black));
 
             }
@@ -259,7 +276,7 @@ public class musicpage extends AppCompatActivity {
              c1.setBackgroundColor(backgroundColor);
              b2.setBackgroundColor(backgroundColor);
              t1.setTextColor(titlecolor);
-
+             t4.setTextColor(titlecolor);
      }
 
     public void shuffle(View View)
@@ -387,7 +404,6 @@ public class musicpage extends AppCompatActivity {
         th.interrupt();
         Log.d("Thread", String.valueOf(th.isAlive()));
         super.onBackPressed();
-        overridePendingTransition(R.anim.nothing,R.anim.bottom_down);
     }
 }
 

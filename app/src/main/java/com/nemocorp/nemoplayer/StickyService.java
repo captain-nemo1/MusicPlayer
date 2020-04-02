@@ -3,13 +3,18 @@ package com.nemocorp.nemoplayer;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
@@ -22,8 +27,10 @@ import static com.nemocorp.nemoplayer.MainActivity.NEXT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.REPEAT_ACTION;
+import static com.nemocorp.nemoplayer.MainActivity.builder;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.image;
+import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
 import static com.nemocorp.nemoplayer.MainActivity.repeat22;
@@ -43,11 +50,34 @@ public class StickyService extends Service {
     public void onCreate()
     {
     super.onCreate();
+        if(mediaPlayer!=null)
+            mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+        headphone_unplug();
+    }
 
+    private BroadcastReceiver NoisyReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if( mediaPlayer!= null && mediaPlayer.isPlaying() ) {
+                MainActivity.wantsmusic=true; image=R.drawable.pause;
+                MainActivity.Pause1();
+                if(k1==1)
+                {
+                    musicpage.check();
+                }
+                Intent service=new Intent(context, StickyService.class);
+                context.startService(service);
+            }
+        }
+    };
+    public void headphone_unplug()
+    {
+        IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(NoisyReceiver, filter);
     }
 
 
-    public int onStartCommand(Intent i, int flags, int startId )
+        public int onStartCommand(Intent i, int flags, int startId )
     {
         mediaMetadataBuilder=new MediaMetadata.Builder();
         mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, 0);
@@ -59,8 +89,9 @@ public class StickyService extends Service {
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         Bitmap icon;
-        MediaMetadataRetriever m = new MediaMetadataRetriever();
-        m.setDataSource(songs.get(current));
+        if(!Ytsearch.streaming) {
+            MediaMetadataRetriever m = new MediaMetadataRetriever();
+            m.setDataSource(songs.get(current));
             try {
                 byte[] a = m.getEmbeddedPicture();
                 Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
@@ -68,6 +99,9 @@ public class StickyService extends Service {
             } catch (Exception e) {
                 icon = BitmapFactory.decodeResource(this.getResources(), R.drawable.noicon);
             }
+        }
+        else
+            icon = MainActivity.stream_thumnail;
         Intent yesReceive2 = new Intent(this, NotificationReceiver.class);
         yesReceive2.setAction(PREV_ACTION);
         PendingIntent pendingIntentYes2 = PendingIntent.getBroadcast(this, 12345, yesReceive2, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -87,9 +121,6 @@ public class StickyService extends Service {
         MainActivity.builder = new NotificationCompat.Builder(this, "101")
                 .setSmallIcon(R.drawable.music)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setContentTitle(song_name.get(current))
-                .setContentText(song_artist.get(current))
-                .setSubText(song_album.get(current))
                 .setLargeIcon(icon)
                 .setColorized(true)
                 .setColor(Color.BLACK)
@@ -103,7 +134,16 @@ public class StickyService extends Service {
                 .setOnlyAlertOnce(true)
                 .setTimeoutAfter(mediaPlayer.getDuration())
                 .setPriority(NotificationCompat.PRIORITY_LOW);
-
+        if(!Ytsearch.streaming)
+        {
+            builder.setContentTitle(song_name.get(current))
+                    .setContentText(song_artist.get(current))
+                    .setSubText(song_album.get(current));
+        }
+        else
+        {builder.setContentTitle(MainActivity.stream_name);
+         builder.setContentText(MainActivity.stream_channel);
+        }
         Notification notification= MainActivity.builder.build();
         notificationManager = NotificationManagerCompat.from(this);
         startForeground(101, notification);
@@ -116,6 +156,7 @@ public class StickyService extends Service {
     {
         if(notificationManager!=null)
         {notificationManager.cancel(101);
+        unregisterReceiver(NoisyReceiver);
         stopForeground(true);}
 
     }
