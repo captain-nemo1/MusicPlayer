@@ -38,10 +38,12 @@ public class NotificationReceiver extends BroadcastReceiver {
             else
             {MainActivity.wantsmusic=true; image=R.drawable.pause;}
             MainActivity.Pause1();
+            MainActivity.requestAudio();
             if(k1==1)
             {
                 musicpage.check();
             }
+            StickyService.update_playback(mediaPlayer.getCurrentPosition());
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
         } else if (PREV_ACTION.equals(action)) {

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
-    <color name="turqoise">#40E0D0	</color>
+    <color name="turqoise">#349638</color>
     <color name="black">#000000</color>
     <color name="grey">#A9A9A9</color>
     <color name="white">#FFFFFF</color>
     <color name="purplish">#EE423F3C</color>
+    <color name="blue">#176099</color>
+    <color name="back1">#2C5364</color>
+    <color name="back3">#0F2027</color>
+    <color name="notification_bg">#e91e63</color>
+
 </resources>

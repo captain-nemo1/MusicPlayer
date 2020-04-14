@@ -13,6 +13,6 @@
         android:id="@+id/action_downloader"
         android:icon="@drawable/downloader"
         android:enabled="true"
-        android:title="Downloader"
+        android:title="YouTube"
         app:showAsAction="always" />
 </menu>

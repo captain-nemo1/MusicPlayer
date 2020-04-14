@@ -2,11 +2,11 @@ package com.nemocorp.nemoplayer;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -23,12 +23,18 @@ import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaScannerConnection;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.provider.MediaStore;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -57,14 +63,23 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.MenuItemCompat;
 
+import com.flurry.android.FlurryAgent;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static com.nemocorp.nemoplayer.StickyService.mediaSession;
+import static com.nemocorp.nemoplayer.StickyService.update_playback;
 import static com.nemocorp.nemoplayer.Ytsearch.streaming;
 
 
@@ -78,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String NEXT_ACTION = "NEXT_ACTION";
     public static final String CANCEL_ACTION = "CANCEL_ACTION";
     public static final String REPEAT_ACTION = "REPEAT_ACTION";
-
     static ListView list;
     PowerManager.WakeLock wakeLock;
     static Button b1, b4, b5;
@@ -88,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     static RelativeLayout r;
     static boolean loop = false;
     static LinearLayout l1;
+    static boolean perm_granted=false;
     static int image = R.drawable.pause;
     static int repeat22= R.drawable.repeat;
     static boolean flag = false;
@@ -113,35 +128,46 @@ public class MainActivity extends AppCompatActivity {
     static Thread t = null;
     static Thread bit=null;
     static Intent service;
+    static NotificationChannel channel;
     static NotificationCompat.Builder builder;
-    AudioManager audioManager;
+    static AudioManager audioManager;
     static boolean wantsmusic;
     static int k1 = 0;
     static  BroadcastReceiver onComplete=null;
     int first = 0;
     static BottomNavigationView bv;
     Intent e;
+    static boolean internet_flag;
+    public static Activity main;
     AlertDialog.Builder dialog;
+    static Context con_main;
     MediaMetadataRetriever metaRetriver;
-    AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
-
+    static Document doc=null;
+    static Thread ch;
+    List_Async ls;
+    static boolean byCall=false;
+    static TelephonyManager telephonyManager;
+    static PhoneStateListener callStateListener;
+    static AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
-            switch (focusChange) {
+                        switch (focusChange) {
 
                 case AudioManager.AUDIOFOCUS_GAIN:
-                    if (mediaPlayer != null && wantsmusic == true) {
+                    if (mediaPlayer != null && wantsmusic == true ) {
                         Pause1();
                         image=R.drawable.pause;
                         wantsmusic=true;
-                        startService(service);
+                         update_playback(mediaPlayer.getCurrentPosition());
+                        con_main.startService(service);
                     }
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS:
                     Pause1();
                     image=R.drawable.ic_play_circle_filled_black_24dp;
-                    startService(service);
-                    wantsmusic = true;
+                    con_main.startService(service);
+                    update_playback(mediaPlayer.getCurrentPosition());
+                   wantsmusic = false;
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                     if (wantsmusic == false)
@@ -149,7 +175,9 @@ public class MainActivity extends AppCompatActivity {
                     flag = true;
                     Pause1();
                     image=R.drawable.ic_play_circle_filled_black_24dp;
-                    startService(service);
+                    con_main.startService(service);
+                    update_playback(mediaPlayer.getCurrentPosition());
+                    wantsmusic=true;
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                 case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
@@ -162,7 +190,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        moveTaskToBack(true);
+        moveTaskToBack(true);                 Log.i("values", "BackPressed");
+
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -170,6 +199,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE, 101);
+        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 102);
+        new FlurryAgent.Builder()
+                .withLogEnabled(true)
+                .build(this, "P48MJ6P4FYR8WJ836BJ8");
+
+    }
+
+    public void all_Stuff()
+    {
         final Toolbar yourToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(yourToolbar);
         createNotificationChannel();
@@ -177,43 +216,57 @@ public class MainActivity extends AppCompatActivity {
         dialog=new AlertDialog.Builder(this);
         list = findViewById(R.id.list);
         list.setLongClickable(true);
+        main= (Activity) this;
         t2 = findViewById(R.id.title);
         t3 = findViewById(R.id.starttime);
+        t4 = findViewById(R.id.endtime);
         t4 = findViewById(R.id.endtime);
         b1 = findViewById(R.id.play);
         b4 = findViewById(R.id.repeat);
         b5 = findViewById(R.id.shuffle);
+        con_main=getApplicationContext();
+        internet_flag=Check_Internet(this);
+        if(internet_flag) {
+            scrap_speed();//improves scraping speed in Ytsearch
+        }
         b1.setVisibility(View.INVISIBLE);
         t2.setVisibility(View.INVISIBLE);
         bv=findViewById(R.id.bottom_view);
         s = findViewById(R.id.seekBar);
         s.setEnabled(false);
         r = findViewById(R.id.r2);
-        checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE, 101);
-        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 102);
-        getsong(getApplicationContext());
+        getsong(this);
         getart();
+        mediaSession=new MediaSessionCompat(getApplicationContext(),"NemoCorp");
+        appendLog("Start Session");
         service = new Intent(getApplicationContext(), StickyService.class);
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "MyApp::MyWakelockTag");
         wakeLock.acquire();
-        t = new Thread();
         i = new Intent(MainActivity.this, musicpage.class);
         l1 = findViewById(R.id.layout);
         r=findViewById(R.id.r2);
+        t=new Thread();
         mediaPlayer = new MediaPlayer();
-       // audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        createList();
+        createList(this);
+        ls=new List_Async(this);
+        telephonyManager = (TelephonyManager)getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+        callStateListener = new PhoneStateListener();
+        stop_call(this);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.i("values", "SongLIST ITEM CLICKED");
+                appendLog("SongLIST ITEM CLICKED");
+                image=R.drawable.pause;
                 streaming=false;
+
                 try {
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
                 } catch (Exception e) {
-
+                    appendLog(String.valueOf(e));
                 }
                 if(temp4.size()>0)
                 {
@@ -221,7 +274,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 String songname = songs.get(position);
                 stopifSongPlaying();
-                Log.d("values", songs.get(position));
                 current = position;
                 s.setEnabled(true);
                 media(songname);
@@ -229,43 +281,61 @@ public class MainActivity extends AppCompatActivity {
                 check();
             }
         });
-       list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-           @Override
-           public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-               dialog.setMessage(song_name.get(i))
-                       .setTitle("Delete")
-                       .setCancelable(true)
-                       .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                           public void onClick(DialogInterface dialog, int id) {
-                               try {
-                                   File del = new File(songs.get(i));
-                                   boolean f=del.delete();
-                                   if(f)
-                                        Toast.makeText(getApplicationContext(), "Deleted " + song_name.get(i)+"Restart App to reflect change", Toast.LENGTH_SHORT).show();
-                                   else
-                                       Toast.makeText(getApplicationContext(), "Can't Delete files in SD-Card", Toast.LENGTH_SHORT).show();
-                                   MediaScannerConnection.scanFile(getApplicationContext(),new String[]{songs.get(i)},new String[]{"mp3/*"},null);//scan audio files so deleted files are reflected
-                               } catch (Exception ex) {
-                                   ex.printStackTrace();
-                                   Log.d("values",e+"");
-                               }
-                           }
-                       })
-                       .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                           public void onClick(DialogInterface dialog, int id) {
-                               dialog.cancel();
-                           }
-                       });
-               if(temp4.size()<=0||temp4.size()==song_name.size()){//not delete when search is being used
-               AlertDialog alert = dialog.create();
-               alert.show();}
-               return true;
-           }
-       });
+        list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Log.i("values", "SONG ITEM LONG CLICKED");
+                appendLog("SONG ITEM LONG CLICKED");
+                dialog.setMessage(song_name.get(i))
+                        .setTitle("Delete")
+                        .setCancelable(true)
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                try {
+                                    File del = new File(songs.get(i));
+                                    boolean f=del.delete();
+                                    if(f)
+                                    {    Toast.makeText(getApplicationContext(), "Deleted " + song_name.get(i)+"Restart App to reflect change", Toast.LENGTH_SHORT).show();
+                                        ls=new List_Async(getApplicationContext());
+                                        MediaScannerConnection.scanFile(getApplicationContext(), new String[]{songs.get(i)}, new String[]{"mp3/*"}, new MediaScannerConnection.OnScanCompletedListener() {
+                                            @Override
+                                            public void onScanCompleted(String s, Uri uri) {
+                                                ls.execute(song_name.get(i));
+                                            }
+                                        });
+                                    }
+                                    else
+                                        Toast.makeText(getApplicationContext(), "Can't Delete files in SD-Card", Toast.LENGTH_SHORT).show();
+                                    MediaScannerConnection.scanFile(getApplicationContext(),new String[]{songs.get(i)},new String[]{"mp3/*"},null);//scan audio files so deleted files are reflected
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                    appendLog(String.valueOf(ex));
+                                    Log.d("values",e+"");
+                                }
+                            }
+                        })
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        });
+                if(temp4.size()<=0||temp4.size()==song_name.size()){//not delete when search is being used
+                    AlertDialog alert = dialog.create();
+                    alert.show();}
+                return true;
+            }
+        });
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer) {
-                t.interrupt();
+                Log.i("values", "SONG COMPLETE 1 in MAIN");
+                appendLog("SONG COMPLETE 1 in MAIN");
+
+                if(t.isAlive())
+                {t.interrupt();Log.i("values", " INTERUPPTING THREAD ON COMPLETE");
+                    appendLog(" INTERUPPTING THREAD ON COMPLETE");
+                }
+
                 if (!streaming) {
                     if (shuffle == true) {
                         Random r = new Random();
@@ -282,7 +352,11 @@ public class MainActivity extends AppCompatActivity {
                         musicpage.t2.setText("0:00");
                         musicpage.seek();
                         musicpage.t1.setText(song_name.get(current));
-                        musicpage.t4.setText(song_artist.get(current));
+                        String temp5=song_artist.get(current);
+                        if(!temp5.equals("<unknown>"))
+                            musicpage.t4.setText(song_artist.get(current));
+                        else
+                            musicpage.t4.setText("");
                         MediaMetadataRetriever m = new MediaMetadataRetriever();
                         try {
                             m.setDataSource(songs.get(MainActivity.current));
@@ -292,6 +366,8 @@ public class MainActivity extends AppCompatActivity {
                         } catch (Exception e) {
                             musicpage.i1.setImageResource(R.drawable.ic_music_note_black_24dp);
                         }
+                        Log.i("values", "SONG COMPLETE STARTING NEXT IN MAIN");
+                        appendLog("SONG COMPLETE STARTING NEXT IN MAIN");
                     }
                 }
             }});
@@ -300,6 +376,8 @@ public class MainActivity extends AppCompatActivity {
             public void onSwipeTop() {
                 if (!streaming) {
                     if (first != 0) {
+                        Log.i("values", "SWIPE UP MAIN");
+                        appendLog("SWIPE UP MAIN");
                         i.putExtra("name", song_name.get(current));
                         int k = mediaPlayer.getCurrentPosition();
                         i.putExtra("prog", String.valueOf(k));
@@ -313,6 +391,9 @@ public class MainActivity extends AppCompatActivity {
             public void onSwipeBottom() {
                 if (!streaming) {
                     if (first != 0) {
+                        Log.i("values", "SWIPE DONW MAIN");
+                        appendLog("SWIPE DONW MAIN");
+
                         int k = mediaPlayer.getCurrentPosition();
                         i.putExtra("prog", String.valueOf(k));
                         String s = songs.get(current);
@@ -325,6 +406,8 @@ public class MainActivity extends AppCompatActivity {
             public void onSwipeRight() {
                 if (!streaming) {
                     if (shuffle == true) {
+                        Log.i("values", "SWIPE RIGHT MAIN");
+                        appendLog("SWIPE RIGHT MAIN");
                         Random r = new Random();
                         current = r.nextInt(songs.size() - 1);
                     }
@@ -334,6 +417,9 @@ public class MainActivity extends AppCompatActivity {
             public void onSwipeLeft() {
                 if (!streaming) {
                     if (shuffle == true) {
+                        Log.i("values", "SWIPE LEFT MAIN");
+                        appendLog("SWIPE LEFT MAIN");
+
                         Random r = new Random();
                         current = r.nextInt(songs.size() - 1);
                     }
@@ -344,29 +430,152 @@ public class MainActivity extends AppCompatActivity {
         bv.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                Log.i("values", "IN BOTTOM BAR MAIN");
+                appendLog("IN BOTTOM BAR MAIN");
+
                 switch(menuItem.getItemId())
                 {
                     case R.id.action_downloader:
+                        Log.i("values", "CLICKED DOWNLOADER");
+                        appendLog("CLICKED DOWNLOADER");
+
+
                         Intent i=new Intent(getApplicationContext(), Ytsearch.class);
                         startActivity(i);
                         break;
                     case R.id.action_player:
                         if (!streaming) {
-                        if (first != 0) {
-                            Intent i2 = new Intent(getApplicationContext(), musicpage.class);
-                            i2.putExtra("name", song_name.get(current));
-                            int k = mediaPlayer.getCurrentPosition();
-                            i2.putExtra("prog", String.valueOf(k));
-                            String s = songs.get(current);
-                            i2.putExtra("art", s);
-                            startActivity(i2);
-                            break;
-                        }
-                };
-            } return true;
-        }});
+                            if (first != 0) {
+                                Log.i("values", "CLICKED PLAYER");
+                                appendLog("CLICKED PLAYER");
+
+                                Intent i2 = new Intent(getApplicationContext(), musicpage.class);
+                                i2.putExtra("name", song_name.get(current));
+                                int k = mediaPlayer.getCurrentPosition();
+                                i2.putExtra("prog", String.valueOf(k));
+                                String s = songs.get(current);
+                                i2.putExtra("art", s);
+                                startActivity(i2);
+                                break;
+                            }
+                        };
+                } return true;
+            }});
     }
+    static public void stop_call(Context context)
+    {
+         telephonyManager = (TelephonyManager)context.getSystemService(context.TELEPHONY_SERVICE);
+         callStateListener = new PhoneStateListener() {
+            public void onCallStateChanged(int state, String incomingNumber)
+            {
+                if(state==TelephonyManager.CALL_STATE_RINGING){
+                    if(mediaPlayer.isPlaying()){
+                        byCall = true;
+                        Intent yesReceive = new Intent(context, NotificationReceiver.class);
+                        yesReceive.setAction(PLAY_ACTION);
+                        context.sendBroadcast(yesReceive);
+                    }
+                }
+
+                if(state==TelephonyManager.CALL_STATE_OFFHOOK){
+                    if(MainActivity.mediaPlayer.isPlaying()){
+                        byCall = true;
+                        Intent yesReceive = new Intent(context, NotificationReceiver.class);
+                        yesReceive.setAction(PLAY_ACTION);
+                        context.sendBroadcast(yesReceive);
+                    }
+                }
+
+                if(state==TelephonyManager.CALL_STATE_IDLE){
+                    if(byCall){
+                        byCall = false;
+                        try {
+                            Thread.sleep(50);// otherwise plays then stops music
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                            appendLog(String.valueOf(ex));
+                        }
+                        Intent yesReceive = new Intent(context, NotificationReceiver.class);
+                        yesReceive.setAction(PLAY_ACTION);
+                        context.sendBroadcast(yesReceive);
+                    }
+                }
+            }
+        };
+    }
+
+   static public void appendLog(String text)
+    {
+        File logFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)+"/");
+        if(!logFile.exists()){
+            if(!logFile.mkdir()){
+                Log.d("values","CANT CREATE DIRECTORY MUSIC");
+            }
+        }
+        File path=con_main.getExternalFilesDir("");
+        logFile=new File(path,"log.txt");
+
+        if (!logFile.exists())
+        {
+            try
+            {
+                logFile.createNewFile();
+                logFile.setReadable(true,false);
+                logFile.setWritable(true,false);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+                logFile.delete();
+            }
+        }
+        try
+        {
+            //BufferedWriter for performance, true to set append to file flag
+            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+            buf.append(text);
+            buf.newLine();
+            buf.close();
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            logFile.delete();
+            e.printStackTrace();
+        }
+
+    }
+
+    static public void scrap_speed()
+    {
+        Log.i("values", "SCRAP SPEED");
+        appendLog("SCRAP SPEED");
+        ch=new Thread(){
+            @Override
+            public void run()
+            {
+                try {
+                    Connection.Response rep = Jsoup.connect("https://www.youtube.com/results?search_query=")
+                            .timeout(500)
+                            .userAgent("Mozilla")
+                            .ignoreContentType(true)
+                            .referrer("https://www.google.com")
+                            .followRedirects(true)
+                            .execute();
+                    appendLog("RESPONSE CODE "+rep.statusCode()+"   "+rep.statusMessage());
+                    MainActivity.doc=rep.parse();
+                    appendLog("Scrap Main Done");
+                } catch (IOException e) {
+                    appendLog("Scrap_speed"+String.valueOf(e));
+                }
+            }
+        };
+        ch.start();
+    }
+
     static public void downloadfinished(Context ctx){
+        Log.i("values", "DOWNLOAD FINISHED");
+        appendLog("DOWNLOAD FINISHED");
          onComplete=new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -385,35 +594,49 @@ public class MainActivity extends AppCompatActivity {
                             {
                                 Ytsearch.change_format(context);
                                 Ytsearch.add_tags(context);
-                                Toast.makeText(context,"Close and Open App to get the downloaded song in list", Toast.LENGTH_LONG).show();
                                 try {
-                                    MediaScannerConnection.scanFile(context,new String[]{String.valueOf(Environment.getExternalStorageDirectory())},new String[]{"audio/*"},null);//updateMediaStore
                                     Log.d("values","updated");
-                                    getsong(context );
+                                    List_Async ls=new List_Async(context);
+                                    MediaScannerConnection.scanFile(ctx, new String[]{String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)),String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC))}, new String[]{"audio/*"}, new MediaScannerConnection.OnScanCompletedListener() {
+
+                                        @Override
+                                            public void onScanCompleted(String s, Uri uri) {
+                                            ls.execute(Ytsearch.name);
+                                        }
+                                    });
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
+                                    appendLog(String.valueOf(ex));
                                     Log.d("values", ""+ex);
                                 }
                             }
                         }
                     }
                     cursor.close();
+                    unregister(ctx);
                 }
                 download_finished=0;
-                if(download_finished==0)
-                    unregister(ctx);
+                Ytsearch.b1.setText("Search");
+                Log.i("values", "DOWNLOAD FINISHED ENDED");
+                appendLog("DOWNLOAD FINISHED ENDED");
             }
         };
         ctx.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
     public static void unregister(Context ctx)
     {
-        ctx.unregisterReceiver(MainActivity.onComplete);
+        Log.i("values", "UNREGISTER ONCOMPLETE");
+        appendLog("UNREGISTER ONCOMPLETE");
+
+                ctx.unregisterReceiver(MainActivity.onComplete);
     }
 
-     public void createList()
+    static public void createList(Activity ctx)
     {
-        myAdapter madapter=new myAdapter(this,song_name, song_artist,songs);
+        Log.i("values", "CREATING LIST");
+        appendLog("CREATING LIST");
+
+        myAdapter madapter=new myAdapter(ctx,song_name, song_artist,songs);
         madapter.notifyDataSetChanged();
         list.setAdapter(madapter);
     }
@@ -423,8 +646,8 @@ public class MainActivity extends AppCompatActivity {
       inflater.inflate(R.menu.menu, menu);
       MenuItem search=menu.findItem(R.id.action_search);
       SearchView sv= (SearchView)MenuItemCompat.getActionView(search);
-      EditText txtSearch=(sv.findViewById(androidx.appcompat.R.id.search_src_text));
-      ImageView searchclose=sv.findViewById(androidx.appcompat.R.id.search_close_btn);
+      EditText txtSearch=(sv.findViewById(R.id.search_src_text));
+      ImageView searchclose=sv.findViewById(R.id.search_close_btn);
       searchclose.setImageResource(R.drawable.close);
       txtSearch.setTextColor(Color.WHITE);
       txtSearch.setHint("Search by Title Or Artist");
@@ -465,8 +688,11 @@ public class MainActivity extends AppCompatActivity {
       return super.onCreateOptionsMenu(menu);
     }
 
-    public void getart()
+    static public void getart()
     {
+        Log.i("values", "GETTING ART");
+        appendLog("GETTING ART");
+
         bit=new Thread(){
             @Override
             public void run()
@@ -483,6 +709,8 @@ public class MainActivity extends AppCompatActivity {
                         bitmapArray.add(c);}
                     catch (Exception e){bitmapArray.add(null);}
                 }
+                Log.i("values", "GOT ART");
+                appendLog("GOT ART");
             }
         };
        bit.start();
@@ -490,15 +718,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume()
     {
-       // if(download_finished==1)
-         //   downloadfinished(this);
+        Log.i("values", "INSIDE RESUME MAIN");
+        appendLog("INSIDE RESUME MAIN");
+        //if(ls.getStatus()!=AsyncTask.Status.RUNNING)
+        //createList(this);
         if(streaming==true)
             requestAudio();
         fileopen();
         super.onResume();
+        Log.i("values", "OUT OF RESUME MAIN");
+        appendLog("OUT OF RESUME MAIN");
+
 
     }
     public void fileopen() {
+        Log.i("values", "OPENING FILE MAIN");
+        appendLog("OPENING FILE MAIN");
         try {
             String name = "";
             e = getIntent();
@@ -528,8 +763,12 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(e));
         }
+        Log.i("values", "FILE OPENED  MAIN");
+        appendLog("FILE OPENED  MAIN");
+
     }
 
     static public void check() {
@@ -538,14 +777,14 @@ public class MainActivity extends AppCompatActivity {
         else
             b1.setBackgroundResource(R.drawable.ic_play_circle_filled_black_24dp);
     }
-    public void requestAudio() {
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    static public void requestAudio() {
+        audioManager = (AudioManager) con_main.getSystemService(Context.AUDIO_SERVICE);
         AudioAttributes mAudioAttributes =
                 new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build();
-        AudioFocusRequest mAudioFocusRequest =
+         AudioFocusRequest mAudioFocusRequest =
                 new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                         .setAudioAttributes(mAudioAttributes)
                         .setAcceptsDelayedFocusGain(true)
@@ -585,15 +824,20 @@ public class MainActivity extends AppCompatActivity {
                 t3.setText("0:00");
             }
             if (t.isAlive())
-                t.interrupt();
+            {t.interrupt(); Log.i("values", "INTERRUPT THREAD IN STOP IF ALREADY PLAING");
+                appendLog("INTERRUPT THREAD IN STOP IF ALREADY PLAING");
+            }
         }
+
     }
     public void Pause(View view) {
-        if (flag == true) {
-            wantsmusic = false;
-        } else
-            wantsmusic = true;
         Pause1();
+        if(flag)
+            wantsmusic=true;
+        else
+            wantsmusic=false;
+        requestAudio();
+
         startService(service);
     }
     static public void Pause1() {
@@ -601,7 +845,6 @@ public class MainActivity extends AppCompatActivity {
             if (mediaPlayer != null) {
                 mediaPlayer.pause();
                 flag = false;
-                Log.d("Working1", "Audio");
                 b1.setBackgroundResource(R.drawable.ic_play_circle_filled_black_24dp);
                 image = R.drawable.ic_play_circle_filled_black_24dp;
             }
@@ -618,6 +861,7 @@ public class MainActivity extends AppCompatActivity {
         b1.setVisibility(View.VISIBLE);
         t3.setText("0:00");
         requestAudio();
+        wantsmusic=true;
         try {
             mediaPlayer.reset();
             mediaPlayer.setDataSource(path);
@@ -635,6 +879,7 @@ public class MainActivity extends AppCompatActivity {
             startService(service);
         } catch (IOException e) {
             e.printStackTrace();
+            appendLog(String.valueOf(e));
             Log.e("MEDIAPLAYER ERROR", String.valueOf(e));
         }
         details();
@@ -657,19 +902,30 @@ public class MainActivity extends AppCompatActivity {
             t4.setText(min + ":" + sec);
     }
     static public void createThread() {
-        if (t.isAlive())
-            t.interrupt();
+        try {
+            if (t.isAlive())
+            {t.interrupt();Log.i("values", "INTERRUPTING THREAD IN CREATE THREAD");
+            appendLog("INTERRUPTING THREAD IN CREATE THREAD");}
+        } catch (Exception ex) {
+            appendLog(String.valueOf(ex));
+        }
+
         t = new Thread() {
             @Override
             public void run() {
+                StickyService.metadata();
+                StickyService.setting_icon();
                 int currentPosition = 0;
                 int total = mediaPlayer.getDuration();
                 s.setMax(total);
                 while (mediaPlayer != null && currentPosition < total) {
                     try {
+                        StickyService.seekto(mediaPlayer.getCurrentPosition());
                         Thread.sleep(1000);
                         currentPosition = mediaPlayer.getCurrentPosition();
+                        telephonyManager.listen(callStateListener,PhoneStateListener.LISTEN_CALL_STATE);
                     } catch (InterruptedException e) {
+                        appendLog(String.valueOf(e));
                       return;
                     }
                     s.setProgress(currentPosition);
@@ -687,13 +943,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean fromuser) {
                 if (mediaPlayer != null && fromuser)
-                    mediaPlayer.seekTo(i);
+                {mediaPlayer.seekTo(i);}
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
     }
@@ -740,7 +997,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void next(View view) {
-
         next1();
     }
     static public void repeat1() {
@@ -755,13 +1011,6 @@ public class MainActivity extends AppCompatActivity {
             b4.setBackgroundResource(R.drawable.repeat);
             repeat22 = R.drawable.repeat;
         }
-        if(streaming)//if streaming them always will repeat
-        {
-            loop = true;
-            mediaPlayer.setLooping(loop);
-            b4.setBackgroundResource(R.drawable.donot);
-            repeat22 = R.drawable.donot;
-        }
     }
      public void repeat(View view) {
         repeat1();
@@ -773,31 +1022,34 @@ public class MainActivity extends AppCompatActivity {
             // Requesting the permission
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, requestCode);
         }
+        else if(requestCode==101)
+        all_Stuff();
     }
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 101) {
+        if (requestCode == 101 ) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(MainActivity.this,
                         "Storage Permission Granted",
                         Toast.LENGTH_SHORT)
                         .show();
-                PackageManager packageManager = this.getPackageManager();
-                Intent intent = packageManager.getLaunchIntentForPackage(this.getPackageName());
-                ComponentName componentName = intent.getComponent();
-                Intent mainIntent = Intent.makeRestartActivityTask(componentName);
-                this.startActivity(mainIntent);
-                Runtime.getRuntime().exit(0);
+                //PackageManager packageManager = con_main.getPackageManager();
+               // Intent intent = packageManager.getLaunchIntentForPackage(con_main.getPackageName());
+                //ComponentName componentName = intent.getComponent();
+                all_Stuff();
+               // Intent mainIntent = Intent.makeRestartActivityTask(componentName);
+                //this.startActivity(mainIntent);
+                //Runtime.getRuntime().exit(0);
             } else {
                 Toast.makeText(MainActivity.this, "Storage Permission Denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
   static public void getsong(Context context) {
-
+        clear();
         String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
         ContentResolver contentResolver = context.getContentResolver();
         Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
@@ -832,12 +1084,25 @@ public class MainActivity extends AppCompatActivity {
         }
         songCursor.close();
     }
+    static public void clear()
+    {
+        songs.clear();
+        song_name.clear();
+        song_artist.clear();
+        song_album.clear();
+        song_dur.clear();
+        song_id.clear();
+        bitmapArray.clear();
+    }
+
 
     @Override
     public void onDestroy() {
+        Log.i("values", "DESTROYED");
+        appendLog("destroyed \n\n\n\n\n");
         wantsmusic=false;
+        telephonyManager.listen(callStateListener,PhoneStateListener.LISTEN_NONE);
         super.onDestroy();
-        wakeLock.release();
         mediaPlayer.stop();
         flag = false;
         mediaPlayer.reset();
@@ -846,6 +1111,7 @@ public class MainActivity extends AppCompatActivity {
         songs.clear();
         song_name.clear();
         notificationManager.cancelAll();
+        wakeLock.release();
     }
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -857,5 +1123,35 @@ public class MainActivity extends AppCompatActivity {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+    public static boolean Check_Internet(Context context)
+    {
+        ConnectivityManager conn=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(conn!=null){
+            NetworkInfo active=conn.getActiveNetworkInfo();
+            if(active!=null)return true;
+        }
+        return false;
+    }
+}
+class List_Async extends AsyncTask<String, String, String> {
+    Context ctx;
+    List_Async(Context c)
+    {
+        ctx=c;
+    }
+    @Override
+    protected String doInBackground(String... strings) {
+        Log.i("values", "IN LIST ASYNC");
+        MainActivity.getsong(ctx);
+        MainActivity.getart();
+        return null;
+    }
+    @Override
+    protected void onPostExecute(String result)
+    {
+        MainActivity.list.setAdapter(null);
+        MainActivity.createList(MainActivity.main);
+        Log.i("values", "LEAVING LIST ASYNC");
     }
 }

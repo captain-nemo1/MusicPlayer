@@ -10,7 +10,6 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -40,7 +39,7 @@ public class musicpage extends AppCompatActivity {
     static TextView t1,t2,t3,t4;
     static SeekBar s2;
     static Button b1,b3,b4;
-    ImageButton b2;
+    Button b2;
     Intent i;
     static String prog;
     static ImageView i1;
@@ -53,6 +52,7 @@ public class musicpage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_musicpage);
         i = getIntent();
+        MainActivity.appendLog("MUSICPAGE CREATED");
         t1 = findViewById(R.id.t1);
         t1.setSelected(true);
         t4=findViewById(R.id.t2);
@@ -85,7 +85,10 @@ public class musicpage extends AppCompatActivity {
                     @Override
                     public void onClick(View view) {
                         if(th.isAlive())
-                            th.interrupt();
+                        {th.interrupt();        MainActivity.appendLog("MUSICPAGE INTERRUPTING ITS THREAD");
+                        }
+                        MainActivity.appendLog("MUSICPAGE LEAVING");
+
                         onBackPressed();
                     }
                 });
@@ -93,17 +96,22 @@ public class musicpage extends AppCompatActivity {
                     public void onSwipeBottom() {
                         if(th.isAlive())
                             th.interrupt();
+                        MainActivity.appendLog("MUSICPAGE LEAVINg SWIPE BOTTOM");
+
                         onBackPressed();
                     }
                     public void onSwipeTop()
                     {
                         if(th.isAlive())
                             th.interrupt();
+                        MainActivity.appendLog("MUSICPAGE LEAVINg SWIPE up");
                         onBackPressed();
                     }
                     public void onSwipeRight() {
                         if(flag!=false) {
-                        if (current == songs.size() - 1)
+                            MainActivity.appendLog("MUSICPAGE SWIPE RIGHT");
+
+                            if (current == songs.size() - 1)
                             current =0;
                         else
                         current=current+1;
@@ -113,11 +121,28 @@ public class musicpage extends AppCompatActivity {
                             }
                             Log.d("thiss111", String.valueOf(current));
                         if(mediaPlayer!=null)
+                        {
+                            mediaPlayer.stop();
                             mediaPlayer.reset();
+                        }
                         try {
                             mediaPlayer.setDataSource(songs.get(current));
                             mediaPlayer.prepare();
                             mediaPlayer.start();
+                            MediaMetadataRetriever m= new MediaMetadataRetriever();
+                            m.setDataSource(songs.get(MainActivity.current));
+                            try {
+                                byte[] a = m.getEmbeddedPicture();
+                                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                                i1.setImageBitmap(c);
+                                background(c);
+                            } catch (Exception e) {
+                                i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                                c1.setBackground(getResources().getDrawable(R.drawable.list_gradient));
+                                t1.setTextColor(getResources().getColor(R.color.white));
+                                t4.setTextColor(getResources().getColor(R.color.white));
+
+                            }
                             if(loop==true)
                                 mediaPlayer.setLooping(true);
                             MainActivity.details();
@@ -143,28 +168,14 @@ public class musicpage extends AppCompatActivity {
                                 t1.setText(song_name.get(current));
                                 t4.setText("");
                             }
-                        MediaMetadataRetriever m= new MediaMetadataRetriever();
-                        m.setDataSource(songs.get(MainActivity.current));
-                        try {
-                            byte[] a = m.getEmbeddedPicture();
-                            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                            i1.setImageBitmap(c);
-                            background(c);
-                        } catch (Exception e) {
-                            i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-                            c1.setBackgroundColor(getResources().getColor(R.color.black));
-                            b2.setBackgroundColor(getResources().getColor(R.color.black));
-                            t1.setTextColor(getResources().getColor(R.color.white));
-                            t4.setTextColor(getResources().getColor(R.color.white));
-
                         }
-                        }
+                        MainActivity.appendLog("MUSICPAGE SWIPE LEFT FINISHED");
                     }
 
                     public void onSwipeLeft()
                     {
                         if(flag!=false) {
-
+                            MainActivity.appendLog("MUSICPAGE SWIPE LEFT");
                             if(current!=0)
                                 current=current-1;
                             if (shuffle == true) {
@@ -172,13 +183,29 @@ public class musicpage extends AppCompatActivity {
                                 current = r.nextInt(songs.size() - 1);
                             }
 
-                            if(mediaPlayer!=null)
+                            if(mediaPlayer!=null){
+                                mediaPlayer.stop();
                                 mediaPlayer.reset();
+                            }
+
                             Log.d("thiss", String.valueOf(current));
                             try {
                                 mediaPlayer.setDataSource(songs.get(current));
                                 mediaPlayer.prepare();
                                 mediaPlayer.start();
+                                MediaMetadataRetriever m= new MediaMetadataRetriever();
+                                m.setDataSource(songs.get(MainActivity.current));
+                                try {
+                                    byte[] a = m.getEmbeddedPicture();
+                                    Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                                    i1.setImageBitmap(c);
+                                    background(c);
+                                } catch (Exception e) {
+                                    i1.setImageResource(R.drawable.ic_music_note_black_24dp);
+                                    c1.setBackground(getResources().getDrawable(R.drawable.list_gradient));
+                                    t1.setTextColor(getResources().getColor(R.color.white));
+                                    t4.setTextColor(getResources().getColor(R.color.white));
+                                }
                                 if(loop==true)
                                     mediaPlayer.setLooping(true);
                                 MainActivity.details();
@@ -204,21 +231,9 @@ public class musicpage extends AppCompatActivity {
                             { t1.setText(song_name.get(current));
                                 t4.setText("");
                             }
-                            MediaMetadataRetriever m= new MediaMetadataRetriever();
-                            m.setDataSource(songs.get(MainActivity.current));
-                            try {
-                                byte[] a = m.getEmbeddedPicture();
-                                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                                i1.setImageBitmap(c);
-                                background(c);
-                            } catch (Exception e) {
-                                i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-                                c1.setBackgroundColor(getResources().getColor(R.color.black));
-                                b2.setBackgroundColor(getResources().getColor(R.color.black));
-                                t1.setTextColor(getResources().getColor(R.color.white));
-                                t4.setTextColor(getResources().getColor(R.color.white));
-                            }
+
                         }
+                        MainActivity.appendLog("MUSICPAGE SWIPE LEFT FINISHED");
                     }
                 });
 
@@ -251,13 +266,11 @@ public class musicpage extends AppCompatActivity {
                 background(c);
             } catch (Exception e) {
                 i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-                c1.setBackgroundColor(getResources().getColor(R.color.black));
-                b2.setBackgroundColor(getResources().getColor(R.color.black));
+                c1.setBackground(getResources().getDrawable(R.drawable.list_gradient));
                 t1.setTextColor(getResources().getColor(R.color.white));
                 t4.setTextColor(getResources().getColor(R.color.white));
-                MainActivity.r.setBackgroundColor(getResources().getColor(R.color.black));
-
             }
+        MainActivity.appendLog("MUSICPAGE ON CREATE FINISHED");
         }
 
     public Palette createPaletteSync(Bitmap bitmap) {
@@ -274,7 +287,6 @@ public class musicpage extends AppCompatActivity {
            backgroundColor = vibrantSwatch.getRgb();
            titlecolor=vibrantSwatch.getBodyTextColor();
              c1.setBackgroundColor(backgroundColor);
-             b2.setBackgroundColor(backgroundColor);
              t1.setTextColor(titlecolor);
              t4.setTextColor(titlecolor);
      }
@@ -402,6 +414,7 @@ public class musicpage extends AppCompatActivity {
         }
         k1=0;
         th.interrupt();
+        MainActivity.appendLog("MUSICPAGE BACK PRESSED THREAD STATUS"+th.isAlive()+"\n");
         Log.d("Thread", String.valueOf(th.isAlive()));
         super.onBackPressed();
     }

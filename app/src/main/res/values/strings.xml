@@ -2,11 +2,16 @@
     <string name="app_name">Nemo Player</string>
     <string name="song_name">Song Name</string>
     <string name="description">Music Player</string>
-    <string name="hint">Search</string>
-    <string name="find">Finding</string>
     <string name="search">Enter Youtube Search Here</string>
     <string name="search_button">Search</string>
     <string name="download">Download</string>
     <string name="stream">Stream</string>
 
+
+    <string name="label_stop">Stop</string>
+    <string name="label_pause">Pause</string>
+    <string name="label_play">Play</string>
+    <string name="label_play_pause">Play and pause toggle</string>
+    <string name="label_previous">Previous track</string>
+    <string name="label_next">Next track</string>
 </resources>

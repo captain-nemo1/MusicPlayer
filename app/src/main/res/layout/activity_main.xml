@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout"
-    android:paddingTop="10dp"
-    android:background="@color/black"
+    android:background="@drawable/list_gradient"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -13,13 +12,13 @@
     <androidx.appcompat.widget.Toolbar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black"
+        android:background="@drawable/list_gradient"
         android:minHeight="?attr/actionBarSize"
         app:logo="@drawable/ic_music_note_black_24dp"
         app:title="Nemo Player"
         android:id="@+id/toolbar"
         app:collapseIcon="@drawable/back"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+        android:theme="@style/AppTheme2"
         app:titleTextColor="@color/white"
         />
 
@@ -29,7 +28,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="2.95"
-        android:background="@color/black"
+        android:divider="@null"
+        android:background="@drawable/list_gradient"
         android:scrollingCache="true"
         tools:layout_editor_absoluteX="1dp"
         tools:layout_editor_absoluteY="1dp">
@@ -41,7 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight=".95"
-        android:background="@color/black"
+        android:background="@drawable/list_gradient"
         android:paddingLeft="5dp"
         android:paddingRight="5dp">
 
@@ -73,9 +73,10 @@
             android:layout_marginLeft="40dp"
             android:layout_marginTop="1dp"
             android:layout_marginRight="40dp"
-            android:progressTint="@color/colorPrimaryDark"
+            android:progressTint="@color/blue"
+            android:progressBackgroundTint="@color/grey"
             android:scrollbarSize="20sp"
-            android:theme="@style/Theme.AppCompat.Light" />
+            android:theme="@style/AppTheme2" />
 
         <TextView
             android:id="@+id/title"
@@ -98,7 +99,7 @@
             android:layout_height="50dp"
             android:layout_below="@id/title"
             android:layout_marginStart="20dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="10dp"
             android:layout_toEndOf="@id/next"
             android:background="@drawable/shuffle1"
             android:onClick="shuffleon" />
@@ -118,7 +119,7 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_below="@id/title"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="10dp"
             android:layout_marginEnd="20dp"
             android:layout_toStartOf="@+id/previous"
             android:background="@drawable/repeat"
@@ -129,7 +130,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_below="@id/title"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="15dp"
             android:layout_marginEnd="20dp"
             android:layout_toStartOf="@id/play"
             android:background="@drawable/previous"
@@ -141,7 +142,7 @@
             android:layout_height="40dp"
             android:layout_below="@id/title"
             android:layout_marginStart="20dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="15dp"
             android:layout_toEndOf="@id/play"
             android:background="@drawable/ic_skip_next_black_24dp"
             android:onClick="next" />
@@ -152,10 +153,11 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight=".35"
+        android:background="@drawable/list_gradient"
         app:menu="@menu/menu2"
         app:itemTextColor="@color/white"
         android:layout_gravity="bottom|center"
-        app:itemIconTint="@color/white"
+        app:itemIconTint="@color/colorPrimary"
         />
 
 </LinearLayout>

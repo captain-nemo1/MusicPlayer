@@ -1,11 +1,15 @@
 package com.nemocorp.nemoplayer;
 
+import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaPlayer;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -14,6 +18,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -32,7 +37,6 @@ import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.mp4.Mp4FieldKey;
 import org.jaudiotagger.tag.mp4.Mp4Tag;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -46,6 +50,7 @@ import java.util.List;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
+import static com.nemocorp.nemoplayer.MainActivity.appendLog;
 import static com.nemocorp.nemoplayer.MainActivity.loop;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.repeat1;
@@ -57,14 +62,15 @@ public class Ytsearch extends AppCompatActivity {
     EditText search;
     static ListView result;
     Thread t = null;
-    Button b1;
+    static Button b1;
     Thread t1 = null;
     static Thread t2 = null;
-    static  int k;
+    static int k=-1;
     static String url;
     static String filetitle;
     static String name;
     static String author;
+    static ScrapAsync r;
     static boolean streaming=false;
     static List<String> channel = new ArrayList<>();
     static List<String> title = new ArrayList<>();
@@ -73,7 +79,10 @@ public class Ytsearch extends AppCompatActivity {
     static Bitmap thumnail;
     static byte[] Byte;
     String s;
+    static Context con;
     static List<Stream> videoStreams;
+    static boolean downloading=false;
+    static boolean prepare_stream=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +91,11 @@ public class Ytsearch extends AppCompatActivity {
         b1 = findViewById(R.id.button4);
         search = findViewById(R.id.search);
         result = findViewById(R.id.result);
+        con=getApplicationContext();
+        MainActivity.internet_flag=MainActivity.Check_Internet(this);
+        if(MainActivity.internet_flag)b1.setClickable(true);
+        else b1.setClickable(false);
+
     }
 
     public void result(View view) {
@@ -95,101 +109,100 @@ public class Ytsearch extends AppCompatActivity {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         } catch (Exception e) {
+            appendLog(String.valueOf(e));
         }
     }
-    static public void download_links(int i)
+    static public void download_links(int i,String ch)
     {
-                k= i;
-                author = channel.get(k);
-                t2 = new Thread() {
-                    @Override
-                    public void run() {
-                        final YouTubeExtractor extractor1 = new YouTubeExtractor.Builder().build();
-                        String id_value = id.get(k);
-                        id_value = id_value.substring(id_value.indexOf('=') + 1, id_value.length());
-                        final Disposable y = extractor1.extract(id_value)
-                                .subscribe(new Consumer<YouTubeExtraction>() {
-                                    @Override
-                                    public void accept(final YouTubeExtraction youTubeExtraction) throws Exception {
-                                        Log.d("Tube", youTubeExtraction + "Done");
-                                        videoStreams = youTubeExtraction.getStreams();
-                                    }
-                                });
-                        String thumb_url = "https://i4.ytimg.com/vi/" + id_value + "/hqdefault.jpg";
-                        try {
-                            URL url = new URL(thumb_url);
-                            thumnail = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                            Log.d("values", thumnail + " \n " + thumb_url);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            Log.d("values", "Failed Bitmap" + e);
-                        }
-                    }
-                };
-                t2.start();
-                try {
-                    t2.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-
-                }
-                url = String.valueOf(videoStreams.get(videoStreams.size() - 4));
-                Log.d("values", url);
-                url = url.substring(url.indexOf('h'), url.lastIndexOf(','));
-                convert_byte();
-                Bitmap bit=BitmapFactory.decodeByteArray(Byte,0,Byte.length);
-                MainActivity.stream_thumnail=bit;
-         //   }
-       // });
+        if (!downloading&&!prepare_stream)
+        {
+            k = i;
+            author = channel.get(k);
+            r=new ScrapAsync(null);
+            r.execute(ch);
+                if(ch.equals("1"))downloading=true;
+                else if(ch.equals("2"))prepare_stream=true;
+        }
+        else
+        {
+            if(downloading==true)
+                Toast.makeText(con,"Preparing for Download Right now, Please Wait",Toast.LENGTH_LONG).show();
+            else if(prepare_stream==true)
+                Toast.makeText(con,"Preparing for Streaming Right now, Please Wait",Toast.LENGTH_LONG).show();
+        }
     }
     static public void stream(Context context){
-       if(mediaPlayer!=null)
+        Log.d("values","IN stream");
+        if(mediaPlayer!=null){
+            mediaPlayer.stop();
             mediaPlayer.reset();
+        }
         try {
             mediaPlayer.setDataSource(url);
-            mediaPlayer.prepare();
-            mediaPlayer.start();
+            mediaPlayer.prepareAsync();
+
             if(loop==true)
                 mediaPlayer.setLooping(true);
         }
         catch (IOException e) {
             e.printStackTrace();
+            appendLog(String.valueOf(e));
         }
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+
+                mediaPlayer.start();
+                prepare_stream=false;
+                int min=(mediaPlayer.getDuration()/1000)/60;
+                int sec=(mediaPlayer.getDuration()/1000)%60;
+                if(sec>=10)
+                    t4.setText(min+":"+sec);
+                else
+                    t4.setText(min+":0"+sec);
+                MainActivity.createThread();
+                t3.setText("0:00");
+                Ytsearch.b1.setText("Search");
+                context.startService(MainActivity.service);
+            }
+        });
+        Ytsearch.b1.setText("Preparing Wait a few more seconds");
         MainActivity.t2.setVisibility(View.VISIBLE);
         MainActivity.t2.setText(title.get(k));
         MainActivity.stream_name=title.get(k);
         MainActivity.stream_channel=channel.get(k);
-        int min=(mediaPlayer.getDuration()/1000)/60;
-        int sec=(mediaPlayer.getDuration()/1000)%60;
-        if(sec>=10)
-            t4.setText(min+":"+sec);
-        else
-            t4.setText(min+":0"+sec);
-        t3.setText("0:00");
-        MainActivity.createThread();
         MainActivity.s.setEnabled(true);
         MainActivity.b1.setVisibility(View.VISIBLE);
         MainActivity.flag=true;
         MainActivity.check();
         streaming=true;
+        loop=false;
         repeat1();
-
-        context.startService(MainActivity.service);
     }
 
     static public void download(Context context)
     {
-        DownloadManager downloadmanager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+       DownloadManager downloadmanager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         Uri uri = Uri.parse(url);
-        DownloadManager.Request request = new DownloadManager.Request(uri);
+      DownloadManager.Request request = new DownloadManager.Request(uri);
         request.setDescription("Downloading");
-        request.setTitle(title.get(k) + ".m4a");
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        if(title.get(k).contains("/")) {
+            String t=title.get(k).replaceAll("/"," or ");
+            title.set(k,t);
+        }
+        else if(title.get(k).contains("#")){
+            String t=title.get(k).replaceAll("#","");
+            title.set(k,t);
+    }
         filetitle = title.get(k) + ".m4a";
         name = title.get(k);
+        request.setTitle(title.get(k) + ".m4a");
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filetitle);
         downloadmanager.enqueue(request);
+        downloading=false;
         MainActivity.download_finished = 1;
+        Ytsearch.b1.setText("Downloading");
         MainActivity.downloadfinished(context);
     }
     static public void change_format(Context context)
@@ -208,6 +221,8 @@ public class Ytsearch extends AppCompatActivity {
             Log.i("values", "ffmpeg4android finished successfully");
         } catch (Throwable e) {
             Log.e("values", "vk run exception."+ e);
+            appendLog(String.valueOf(e));
+
         }
     }
     public static void convert_byte()
@@ -235,6 +250,8 @@ public class Ytsearch extends AppCompatActivity {
                 catch (Exception e) {
                     e.printStackTrace();
                     Log.d("values", "cant set bitmap"+e);
+                    appendLog(String.valueOf(e));
+
                 }
             String log_path=context.getFilesDir().getAbsoluteFile() + "/vk.log";
             File f1= new File(log_path);
@@ -246,72 +263,218 @@ public class Ytsearch extends AppCompatActivity {
                 Log.d("values","tagdone");
             } catch (CannotWriteException e) {
                 e.printStackTrace();
+                appendLog(String.valueOf(e));
+
             }
             Log.d("values", String.valueOf(mp4tag));
         } catch (CannotReadException ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
+
             Log.d("values", String.valueOf(ex));
         } catch (IOException ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(ex));
         } catch (TagException ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(ex));
         } catch (ReadOnlyFileException ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(ex));
         } catch (InvalidAudioFrameException ex) {
             ex.printStackTrace();
+            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(ex));
         }
     }
     public void scrap()
     {
-        t1=new Thread()
-        {
-          @Override
-          public void run()
-          {
-              Document doc = null;
-              try {
-                  doc = Jsoup.connect("https://www.youtube.com/results?search_query="+s).timeout(200000).get();
-              } catch (IOException e) {
-                  Log.d("values", String.valueOf(e));
-                  e.printStackTrace();
-              }
-              Elements check=doc.getElementsByClass("yt-lockup");
-              for(Element ch:check) {
-                  try {
-                      String k = String.valueOf(ch.getElementsByTag("h3"));
-                      k = k.substring(k.lastIndexOf(' '), k.lastIndexOf('.'));
-                      dur.add(k);
-                      title.add(ch.getElementsByTag("a").attr("title"));
-                      channel.add(ch.getElementsByClass("yt-uix-sessionlink       spf-link ").text());
-                      id.add(ch.getElementsByTag("a").attr("href"));
-                  } catch (Exception ex) {
-                      ex.printStackTrace();
-                  }
-              }
-          }
-        };
-        t1.start();
-        try {
-            t1.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        ytsearchadapter yt= new ytsearchadapter(this, title,dur,channel);
-        yt.notifyDataSetChanged();
-        result.setAdapter(yt);
+        clear();
+        b1.setClickable(false);
+        ScrapAsync runner=new ScrapAsync(this);
+        String[] v=new String[2];
+        v[0]="0";
+        v[1]=s;
+        runner.execute(v);
     }
-
-    @Override
-    public void onBackPressed()
+    public void clear()
     {
         title.clear();
         id.clear();
         channel.clear();
         dur.clear();
-        super.onBackPressed();
     }
+    @Override
+    public void onResume()
+    {
+        MainActivity.appendLog("YTSEARCH RESUME STARTED");
+        MainActivity.internet_flag=MainActivity.Check_Internet(this);
+        if(MainActivity.internet_flag){
+            MainActivity.scrap_speed();b1.setClickable(true);}
+        else b1.setClickable(false);
+        super.onResume();
+        MainActivity.appendLog("YTSEARCH RESUME ENDED");
+
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        clear();
+        result.setAdapter(null);
+        MainActivity.appendLog("YTSEARCH DESTROYED\n");
+        MainActivity.t.interrupt();
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        mediaPlayer.release();
+        mediaPlayer=null;
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed()
+    {
+        moveTaskToBack(true);
+        MainActivity.appendLog("YTSEARCH MOVING BACK TO MAINACTIVITY");
+        startActivity(new Intent(this,MainActivity.class));
+    }
+
 }
+class ScrapAsync extends AsyncTask<String, String, String> {
+    Activity ctx;
+    ScrapAsync(Activity c)
+    {
+        ctx=c;
+    }
+    @Override
+    protected String doInBackground(String... strings) {
+        String choice=strings[0];
+        MainActivity.appendLog("YTSEARCH ENTERED ASYNC SCRAP");
+        publishProgress(choice);
+        if(choice.equals("0")) {
+             MainActivity.doc = null;
+            String f = strings[1];
+            try {
+                MainActivity.doc = Jsoup.connect("https://www.youtube.com/results?search_query=" + f)
+                        .timeout(200000)//200000
+                        .userAgent("Mozilla")
+                        .ignoreContentType(true)
+                        .get();
+                appendLog("YTSEARCH SCRAp Done");
+            } catch (IOException e) {
+                Log.d("values", String.valueOf(e));
+                appendLog("YTSEARCH SCRAP FAIL"+String.valueOf(e));
+                e.printStackTrace();
+            }
+            Elements check = MainActivity.doc.getElementsByClass("yt-lockup");
+            for (Element ch : check) {
+                try {
+                    String k = String.valueOf(ch.getElementsByTag("h3"));
+                    k = k.substring(k.lastIndexOf(' '), k.lastIndexOf("</span"));
+                    char chare=k.charAt(k.length()-1);
+                    if(!Character.isDigit(chare)){//to replace . or any other character in the end
+                        k=k.substring(0,k.length()-1);
+                    }
+                    String name=ch.getElementsByTag("a").attr("title");
+                    Ytsearch.dur.add(k);
+                    Ytsearch.title.add(ch.getElementsByTag("a").attr("title"));
+                    Ytsearch.channel.add(ch.getElementsByClass("yt-uix-sessionlink" +
+                            "       spf-link ").text());
+                    Ytsearch.id.add(ch.getElementsByTag("a").attr("href"));
+                } catch (Exception ex) {
+                    Log.d("Values","Failed");
+                    ex.printStackTrace();
+                    appendLog(String.valueOf(ex));
+
+                }
+            }
+        }
+        else
+        {
+            String id_value = Ytsearch.id.get(Ytsearch.k);
+            id_value = id_value.substring(id_value.indexOf('=') + 1, id_value.length());
+            try{
+            Log.d("Values","CAtched2222");
+            final YouTubeExtractor extractor1 = new YouTubeExtractor.Builder().build();
+                Log.d("Values","CAtched3333");
+                Disposable k=extractor1.extract(id_value)
+                        .subscribe(new Consumer<YouTubeExtraction>() {
+                            @Override
+                            public void accept(YouTubeExtraction youTubeExtraction) throws Exception {
+                                Ytsearch.videoStreams = youTubeExtraction.getStreams();
+
+                            }
+                        });
+                String thumb_url = "https://i4.ytimg.com/vi/" + id_value + "/hqdefault.jpg";
+                try {
+                    URL url = new URL(thumb_url);
+                    Ytsearch.thumnail = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                    Log.d("values", Ytsearch.thumnail + " \n " + thumb_url);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    appendLog(String.valueOf(e));
+
+                    Log.d("values", "Failed Bitmap" + e);
+                }
+                Log.d("Values","CAtched4");
+                Ytsearch.url = String.valueOf(Ytsearch.videoStreams.get(Ytsearch.videoStreams.size() - 4));
+                Log.d("values", Ytsearch.url);
+                Ytsearch.url = Ytsearch.url.substring(Ytsearch.url.indexOf('h'), Ytsearch.url.lastIndexOf(','));
+                Ytsearch.convert_byte();
+                Bitmap bit=BitmapFactory.decodeByteArray(Ytsearch.Byte,0,Ytsearch.Byte.length);
+                MainActivity.stream_thumnail=bit;
+                Log.d("values",Ytsearch.url);
+            } catch (Exception e) {
+                Toast.makeText(Ytsearch.con,"ERROR HAPPENED TRY AGAIN", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+                appendLog(String.valueOf(e));
+
+                choice="5";
+            }
+            }
+        Log.d("values", "THREAD DONE"+choice);
+        return choice;
+    }
+    @Override
+    protected void onPostExecute(String result) {
+        if(!result.equals("5")){
+        if (result.equals("0")) {
+            Ytsearch.b1.setClickable(true);
+            Ytsearch.b1.setText("Search");
+            ytsearchadapter yt = new ytsearchadapter(ctx, Ytsearch.title, Ytsearch.dur, Ytsearch.channel);
+            yt.notifyDataSetChanged();
+            Ytsearch.result.setAdapter(yt);
+        }
+        else if(result.equals("1"))
+        {
+            Ytsearch.download(Ytsearch.con);
+        }
+        else
+            Ytsearch.stream(Ytsearch.con);
+        MainActivity.appendLog("YTSEARCH Exiting ASYNC SCRAP");
+
+    }}
+
+    @Override
+    protected void onPreExecute() {
+       Ytsearch.b1.setText("Searching");
+    }
+
+    @Override
+    protected void onProgressUpdate(String... text) {
+        String u=text[0];
+        if(u.equals("0"))
+        {
+            Ytsearch.b1.setText("Searching");
+        }
+        else if(u.equals("1"))
+        {
+            Ytsearch.b1.setText("Preparing for Download");
+        }
+        else
+            Ytsearch.b1.setText("Preparing For Streaming");
+    }
+    }

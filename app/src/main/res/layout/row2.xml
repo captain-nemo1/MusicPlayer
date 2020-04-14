@@ -30,6 +30,6 @@
         android:layout_column="1"
         android:layout_columnWeight="1"
         android:layout_marginTop="27dp"
-        android:textColor="@color/selector"
+        android:textColor="@color/grey"
         android:textSize="15sp" />
 </GridLayout>
