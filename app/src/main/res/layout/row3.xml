@@ -12,21 +12,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/blue2"
         android:textSize="20sp" />
 
     <TextView
         android:id="@+id/textView4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/green"
         android:textSize="15sp" />
 
     <TextView
         android:id="@+id/textView5"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/red"
         android:textSize="15sp" />
 
     <LinearLayout
@@ -43,7 +43,7 @@
             android:layout_marginEnd="5dp"
             android:layout_weight="0.5"
             android:backgroundTint="@color/selector3"
-            android:background="@color/grey"
+            android:background="@drawable/roundedcorner"
             android:text="@string/download"
             android:textColor="@color/white"
             android:visibility="visible" />
@@ -54,7 +54,7 @@
             android:layout_height="30dp"
             android:layout_marginEnd="5dp"
             android:layout_weight=".5"
-            android:background="@color/grey"
+            android:background="@drawable/roundedcorner"
             android:backgroundTint="@color/selector3"
             android:text="@string/stream"
             android:textAlignment="center"

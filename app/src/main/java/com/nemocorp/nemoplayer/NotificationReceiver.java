@@ -12,7 +12,6 @@ import static com.nemocorp.nemoplayer.MainActivity.PLAY_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.PREV_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.REPEAT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.b4;
-import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 import static com.nemocorp.nemoplayer.MainActivity.current;
 import static com.nemocorp.nemoplayer.MainActivity.flag;
 import static com.nemocorp.nemoplayer.MainActivity.image;
@@ -43,7 +42,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             {
                 musicpage.check();
             }
-            StickyService.update_playback(mediaPlayer.getCurrentPosition());
+//StickyService.update_playback(mediaPlayer.getCurrentPosition());
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
         } else if (PREV_ACTION.equals(action)) {
@@ -150,13 +149,6 @@ public class NotificationReceiver extends BroadcastReceiver {
         musicpage.t2.setText("0:00");
         seek();
         musicpage.t1.setText(song_name.get(current));
-        String k=String.valueOf(bitmapArray.get(current));
-        if(k!="null")
-            musicpage.i1.setImageBitmap(bitmapArray.get(current));
-        else
-        {
-            musicpage.i1.setImageResource(R.drawable.ic_music_note_black_24dp);
-        }
     }
 }
 

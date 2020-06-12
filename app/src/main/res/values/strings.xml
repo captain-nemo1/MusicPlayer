@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nemo Player</string>
+    <string name="app_name">Nemo</string>
     <string name="song_name">Song Name</string>
     <string name="description">Music Player</string>
     <string name="search">Enter Youtube Search Here</string>

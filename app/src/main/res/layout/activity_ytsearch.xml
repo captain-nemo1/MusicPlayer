@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/grey"
     android:orientation="vertical"
-    android:background="@color/black"
     tools:context=".Ytsearch">
 
     <EditText
@@ -15,6 +15,7 @@
         android:layout_weight="0.25"
         android:autofillHints=""
         android:hint="@string/search"
+        android:imeOptions="actionDone"
         android:inputType="text"
         android:textColor="@color/white"
         android:textColorHint="@color/white" />
@@ -25,8 +26,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.25"
-        android:onClick="result"
+        android:layout_margin="10dp"
         android:backgroundTint="@color/selector2"
+        android:background="@drawable/roundedcorner"
+        android:onClick="result"
         android:text="@string/search_button"
         android:textColor="@color/white" />
 
@@ -36,10 +39,9 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="3"
-        android:divider="@null"
         android:choiceMode="singleChoice"
-        android:listSelector="@color/grey"
-        >
+        android:divider="@null"
+        android:listSelector="@color/grey">
 
     </ListView>
 

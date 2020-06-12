@@ -21,8 +21,6 @@ android {
                     include "armeabi-v7a", "arm64-v8a"
                     universalApk false
                     debuggable=true
-                    minifyEnabled true
-                    shrinkResources true
                     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 }
             }
@@ -46,12 +44,13 @@ dependencies {
 
 
     implementation 'org.jsoup:jsoup:1.12.1'
-    implementation 'com.github.Commit451:YouTubeExtractor:6.0.0'
     implementation 'com.google.android.material:material:1.1.0'
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'com.github.maxbruecken:jaudiotagger-android:995dd88554'
     implementation 'com.netcompss:ffmpeg4android_lib:41.08'
     implementation 'com.flurry.android:analytics:12.1.0'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.3'
+    implementation 'com.github.kotvertolet:youtube-jextractor:v0.3.0'
 
 }
 

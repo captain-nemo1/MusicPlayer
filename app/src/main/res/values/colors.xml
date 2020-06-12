@@ -7,8 +7,13 @@
     <color name="white">#FFFFFF</color>
     <color name="purplish">#EE423F3C</color>
     <color name="blue">#176099</color>
-    <color name="back1">#2C5364</color>
-    <color name="back3">#0F2027</color>
+    <color name="back1">#F3E6E8</color>
+    <color name="back3">#F3E6E8</color>
     <color name="notification_bg">#e91e63</color>
+    <color name="red">#ff073a</color>
+    <color name="green">#28a745</color>
+    <color name="blue2">#007bff</color>
+    <color name="grey2">#6c757d</color>
+
 
 </resources>

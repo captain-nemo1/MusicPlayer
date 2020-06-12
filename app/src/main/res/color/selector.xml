@@ -2,7 +2,7 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:state_pressed="true"
-        android:color="@color/turqoise"/>
+        android:color="@color/grey2"/>
 
-    <item android:color="@color/white"/>
+    <item android:color="@color/black"/>
 </selector>

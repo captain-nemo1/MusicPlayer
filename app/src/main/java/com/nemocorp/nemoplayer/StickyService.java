@@ -15,7 +15,6 @@ import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.os.SystemClock;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -33,7 +32,6 @@ import static com.nemocorp.nemoplayer.MainActivity.REPEAT_ACTION;
 import static com.nemocorp.nemoplayer.MainActivity.builder;
 import static com.nemocorp.nemoplayer.MainActivity.con_main;
 import static com.nemocorp.nemoplayer.MainActivity.current;
-import static com.nemocorp.nemoplayer.MainActivity.flag;
 import static com.nemocorp.nemoplayer.MainActivity.image;
 import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
@@ -41,7 +39,6 @@ import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
 import static com.nemocorp.nemoplayer.MainActivity.repeat22;
 import static com.nemocorp.nemoplayer.MainActivity.song_album;
 import static com.nemocorp.nemoplayer.MainActivity.song_artist;
-import static com.nemocorp.nemoplayer.MainActivity.song_dur;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
 
@@ -58,52 +55,16 @@ public class StickyService extends Service {
     @Override
     public void onCreate()
     {
-
+        state = new PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0, 0)
+                .build();
+        mediaSession.setPlaybackState(null);
+        mediaSession.setActive(true);
         super.onCreate();
         if(mediaPlayer!=null)
             mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         headphone_unplug();
     }
-    static public void seekto(int pos)//to update seekbar, calling in main
-    {
-        try {
-            update_playback(pos);
-            metadata();
-            setting_icon();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    public static void update_playback(int pos)
-    {
-        try {
-            if (flag) {
-               state = new PlaybackStateCompat.Builder()
-                        .setState(PlaybackStateCompat.STATE_PLAYING, pos, 1, SystemClock.elapsedRealtime())
-                        .build();
-                mediaSession.setPlaybackState(state);
-                mediaSession.setActive(true);
-            } else {
-                if(state.getState()== PlaybackStateCompat.STATE_STOPPED ){
-                    state = new PlaybackStateCompat.Builder()
-                            .setState(PlaybackStateCompat.STATE_PLAYING, pos, 1, SystemClock.elapsedRealtime())
-                            .build();
-                    mediaSession.setPlaybackState(state);
-                    mediaSession.setActive(true);
-                }
-                else{
-                 state = new PlaybackStateCompat.Builder()
-                        .setState(PlaybackStateCompat.STATE_STOPPED, pos, 1, SystemClock.elapsedRealtime())
-                        .build();
-                mediaSession.setPlaybackState(state);
-                mediaSession.setActive(false);
-            }}
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
     private BroadcastReceiver NoisyReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {  //need to do for mediaplayer2 for now
@@ -124,26 +85,19 @@ public class StickyService extends Service {
         IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         registerReceiver(NoisyReceiver, filter);
     }
-    MediaSessionCompat.Callback callback =new MediaSessionCompat.Callback() {
-        @Override
-        public void onSeekTo(long pos) {
-            super.onSeekTo(pos);
-
-        }
-    };
     public static void metadata()
     {
         try {
             if(!Ytsearch.streaming) {
                 mediaMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, song_name.get(current));//new
                 mediaMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, song_artist.get(current));//new
-                mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, song_dur.get(current));
+                mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, 0);
             }
             else
             {
                 mediaMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE,MainActivity.stream_name);
                 mediaMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, MainActivity.stream_channel);//new
-                mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, mediaPlayer.getDuration());
+                mediaMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, 0);
             }
             mediaMetadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, icon);
             mediaSession.setMetadata(MediaMetadataCompat.fromMediaMetadata(mediaMetadataBuilder.build()));//not ne
@@ -167,21 +121,18 @@ public class StickyService extends Service {
         }
         else
             icon = MainActivity.stream_thumnail;
-
     }
-
 
     public int onStartCommand(Intent i, int flags, int startId )
     {
-
+        metadata();
+        setting_icon();
         MediaButtonReceiver.handleIntent(mediaSession, i);//new
         MediaSessionCompat.Token token=mediaSession.getSessionToken();
         Intent intent = new Intent(this, MainActivity.class);
         intent.setAction(Intent.ACTION_MAIN);
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        metadata();
-        setting_icon();
         Intent yesReceive2 = new Intent(this, NotificationReceiver.class);
         yesReceive2.setAction(PREV_ACTION);
         PendingIntent pendingIntentYes2 = PendingIntent.getBroadcast(this, 12345, yesReceive2, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -241,7 +192,11 @@ public class StickyService extends Service {
             unregisterReceiver(NoisyReceiver);
             stopForeground(true);}
         icon=null;
-
+        try {
+            unregisterReceiver(NoisyReceiver);
+        } catch (java.lang.IllegalArgumentException e) {
+            e.printStackTrace();
+        }
     }
 }
 

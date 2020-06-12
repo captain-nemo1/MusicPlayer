@@ -11,16 +11,38 @@
 
     <androidx.appcompat.widget.Toolbar
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="@drawable/list_gradient"
         android:minHeight="?attr/actionBarSize"
-        app:logo="@drawable/ic_music_note_black_24dp"
         app:title="Nemo Player"
         android:id="@+id/toolbar"
         app:collapseIcon="@drawable/back"
         android:theme="@style/AppTheme2"
         app:titleTextColor="@color/white"
-        />
+        >
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/app_name"
+                android:textColor="@color/blue2"
+                android:textSize="30sp"
+                android:paddingStart="20dp"
+                android:textStyle="bold" />
+
+            <Button
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_alignParentStart="true"
+                android:backgroundTint="@color/blue2"
+                android:layout_centerVertical="true"
+                android:background="@drawable/setting" />
+        </RelativeLayout>
+    </androidx.appcompat.widget.Toolbar>
 
 
     <ListView
@@ -52,7 +74,8 @@
             android:layout_alignParentTop="true"
             android:layout_marginTop="1dp"
             android:textAlignment="center"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
+            android:paddingTop="7dp"
             android:textSize="15sp" />
 
         <TextView
@@ -62,7 +85,8 @@
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
             android:textAlignment="viewStart"
-            android:textColor="@color/white"
+            android:paddingTop="7dp"
+            android:textColor="@color/black"
             android:textSize="15sp" />
 
         <SeekBar
@@ -74,7 +98,7 @@
             android:layout_marginTop="1dp"
             android:layout_marginRight="40dp"
             android:progressTint="@color/blue"
-            android:progressBackgroundTint="@color/grey"
+            android:progressBackgroundTint="@color/grey2"
             android:scrollbarSize="20sp"
             android:theme="@style/AppTheme2" />
 
@@ -90,7 +114,8 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
             android:singleLine="true"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
+            android:background="@drawable/list_gradient"
             android:textSize="28sp" />
 
         <Button
@@ -102,6 +127,7 @@
             android:layout_marginTop="10dp"
             android:layout_toEndOf="@id/next"
             android:background="@drawable/shuffle1"
+            android:backgroundTint="@color/blue2"
             android:onClick="shuffleon" />
 
         <Button
@@ -112,6 +138,7 @@
             android:layout_centerInParent="true"
             android:layout_marginTop="5dp"
             android:background="@drawable/pause"
+            android:backgroundTint="@color/blue2"
             android:onClick="Pause" />
 
         <Button
@@ -123,6 +150,7 @@
             android:layout_marginEnd="20dp"
             android:layout_toStartOf="@+id/previous"
             android:background="@drawable/repeat"
+            android:backgroundTint="@color/blue2"
             android:onClick="repeat" />
 
         <Button
@@ -134,6 +162,7 @@
             android:layout_marginEnd="20dp"
             android:layout_toStartOf="@id/play"
             android:background="@drawable/previous"
+            android:backgroundTint="@color/blue2"
             android:onClick="previous" />
 
         <Button
@@ -144,6 +173,7 @@
             android:layout_marginStart="20dp"
             android:layout_marginTop="15dp"
             android:layout_toEndOf="@id/play"
+            android:backgroundTint="@color/blue2"
             android:background="@drawable/ic_skip_next_black_24dp"
             android:onClick="next" />
     </RelativeLayout>
@@ -155,9 +185,9 @@
         android:layout_weight=".35"
         android:background="@drawable/list_gradient"
         app:menu="@menu/menu2"
-        app:itemTextColor="@color/white"
+        app:itemTextColor="@color/black"
         android:layout_gravity="bottom|center"
-        app:itemIconTint="@color/colorPrimary"
+        app:itemIconTint="@color/grey2"
         />
 
 </LinearLayout>
