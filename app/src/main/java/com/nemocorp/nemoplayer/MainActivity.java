@@ -9,13 +9,14 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -43,12 +44,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -64,9 +63,15 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.MenuItemCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.flurry.android.FlurryAgent;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.nemocorp.nemoplayer.adapter.MainList;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -95,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String NEXT_ACTION = "NEXT_ACTION";
     public static final String CANCEL_ACTION = "CANCEL_ACTION";
     public static final String REPEAT_ACTION = "REPEAT_ACTION";
-    static ListView list;
+    static RecyclerView list;
     PowerManager.WakeLock wakeLock;
     static Button b1, b4, b5;
     static SeekBar s;
@@ -104,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
     static RelativeLayout r;
     static boolean loop = false;
     static LinearLayout l1;
+    static MenuItem search;
     static boolean perm_granted=false;
     static int image = R.drawable.pause;
     static int repeat22= R.drawable.repeat;
@@ -112,20 +118,26 @@ public class MainActivity extends AppCompatActivity {
     Intent i;
     static boolean shuffle = false;
     static MediaPlayer mediaPlayer;
-    static List<String> songs = new ArrayList<String>();
+    public static List<String> songs = new ArrayList<String>();
     static NotificationManagerCompat notificationManager;
-    static List<String> song_name = new ArrayList<>();
+    public static List<String> song_name = new ArrayList<>();
     static List<String> song_id = new ArrayList<>();
-    static List<String> song_artist = new ArrayList<>();
+    public static List<String> song_artist = new ArrayList<>();
     static List<String> song_album = new ArrayList<>();
+    public static List<SongItems> songInfo=new ArrayList<>();
     ArrayList<String> temp;
     ArrayList<String> temp2;
     ArrayList<String> temp3;
-   static ArrayList<Integer> temp4=new ArrayList<>();;
+    public static List<String> playlist_songs=new ArrayList<>();
+    public static List<String> playlist_song_name=new ArrayList<>();
+    public static List<String> playlist_song_artist=new ArrayList<>();
+
+    public static ArrayList<Integer> temp4=new ArrayList<>();;
     static List<Long> song_dur = new ArrayList<>();
     static String stream_name;
     static String stream_channel;
     static Bitmap stream_thumnail;
+    static Bitmap download_thumnail;
     static Thread t = null;
     static Thread bit=null;
     static Intent service;
@@ -135,9 +147,10 @@ public class MainActivity extends AppCompatActivity {
     static boolean wantsmusic;
     static int k1 = 0;
     static  BroadcastReceiver onComplete=null;
-    int first = 0;
+    static int first = 0;
     static BottomNavigationView bv;
     Intent e;
+    static MainList adap=new MainList();
     static boolean internet_flag;
     public static Activity main;
     AlertDialog.Builder dialog;
@@ -147,11 +160,15 @@ public class MainActivity extends AppCompatActivity {
     static Document imagedoc=null;
     static URL imageurl;
     static Thread ch;
-    List_Async ls;
-    static myAdapter madapter;
+    static List_Async ls;
+   // static myAdapter madapter;
     static boolean byCall=false;
     static TelephonyManager telephonyManager;
     static PhoneStateListener callStateListener;
+    SharedPreferences sharedPreferences;
+    public static int playlist_play=0;
+    FragmentTransaction ftx = null;
+    static int playlist_index;
     static AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
@@ -212,8 +229,9 @@ public class MainActivity extends AppCompatActivity {
         new FlurryAgent.Builder()
                 .withLogEnabled(true)
                 .build(this, "P48MJ6P4FYR8WJ836BJ8");
-
+        sharedPreferences=getSharedPreferences("NEMO", MODE_PRIVATE);
     }
+
 
     public void all_Stuff()
     {
@@ -222,8 +240,8 @@ public class MainActivity extends AppCompatActivity {
         createNotificationChannel();
         wantsmusic=true;
         dialog=new AlertDialog.Builder(this);
-        list = findViewById(R.id.list);
-        list.setLongClickable(true);
+      //  list = findViewById(R.id.list);
+        //list.setLongClickable(true);
         main= (Activity) this;
         t2 = findViewById(R.id.title);
         t3 = findViewById(R.id.starttime);
@@ -243,7 +261,7 @@ public class MainActivity extends AppCompatActivity {
         s = findViewById(R.id.seekBar);
         s.setEnabled(false);
         r = findViewById(R.id.r2);
-        getsong(this);
+       // getsong(this);
         mediaSession=new MediaSessionCompat(getApplicationContext(),"NemoCorp");
         appendLog("Start Session");
         service = new Intent(getApplicationContext(), StickyService.class);
@@ -256,82 +274,23 @@ public class MainActivity extends AppCompatActivity {
         r=findViewById(R.id.r2);
         t=new Thread();
         mediaPlayer = new MediaPlayer();
-        createList(this);
-        ls=new List_Async(this);
+        Fragment yt=new Ytsearch();
+        Fragment home =new home_Fragment();
+        Fragment play=new Playlist();
+        FragmentManager fm = getSupportFragmentManager();
+        fm.beginTransaction()
+                .add(R.id.frame_layout,home)
+                .add(R.id.frame_layout,play)
+                .add(R.id.frame_layout,yt)
+                .hide(home)
+                .hide(play)
+                .hide(yt)
+                .commit();
+        bv.setSelectedItemId(R.id.home);
         telephonyManager = (TelephonyManager)getSystemService(getApplicationContext().TELEPHONY_SERVICE);
         callStateListener = new PhoneStateListener();
         stop_call(this);
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.i("values", "SongLIST ITEM CLICKED");
-                appendLog("SongLIST ITEM CLICKED");
-                image=R.drawable.pause;
-                streaming=false;
-                try {
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
-                } catch (Exception e) {
-                    appendLog(String.valueOf(e));
-                }
-                if(temp4.size()>0)
-                {
-                    position= temp4.get(position);
-                }
-                String songname = songs.get(position);
-                stopifSongPlaying();
-                current = position;
-                s.setEnabled(true);
-                media(songname);
-                first = 1;
-                check();
-                Log.d("VALUES", songs.get(current)+" \n "+song_dur.get(current));
-            }
-        });
-        list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Log.i("values", "SONG ITEM LONG CLICKED");
-                appendLog("SONG ITEM LONG CLICKED");
-                dialog.setMessage(song_name.get(i))
-                        .setTitle("Delete")
-                        .setCancelable(true)
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                try {
-                                    File del = new File(songs.get(i));
-                                    boolean f=del.delete();
-                                    if(f)
-                                    {    Toast.makeText(getApplicationContext(), "Deleted " + song_name.get(i)+"Restart App to reflect change", Toast.LENGTH_SHORT).show();
-                                        ls=new List_Async(getApplicationContext());
-                                        MediaScannerConnection.scanFile(getApplicationContext(), new String[]{songs.get(i)}, new String[]{"mp3/*"}, new MediaScannerConnection.OnScanCompletedListener() {
-                                            @Override
-                                            public void onScanCompleted(String s, Uri uri) {
-                                                ls.execute(song_name.get(i));
-                                            }
-                                        });
-                                    }
-                                    else
-                                        Toast.makeText(getApplicationContext(), "Can't Delete files in SD-Card", Toast.LENGTH_SHORT).show();
-                                    MediaScannerConnection.scanFile(getApplicationContext(),new String[]{songs.get(i)},new String[]{"mp3/*"},null);//scan audio files so deleted files are reflected
-                                } catch (Exception ex) {
-                                    ex.printStackTrace();
-                                    appendLog(String.valueOf(ex));
-                                    Log.d("values",e+"");
-                                }
-                            }
-                        })
-                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.cancel();
-                            }
-                        });
-                if(temp4.size()<=0||temp4.size()==song_name.size()){//not delete when search is being used
-                    AlertDialog alert = dialog.create();
-                    alert.show();}
-                return true;
-            }
-        });
+
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
@@ -350,11 +309,14 @@ public class MainActivity extends AppCompatActivity {
                 {t.interrupt();Log.i("values", " INTERUPPTING THREAD ON COMPLETE");
                     appendLog(" INTERUPPTING THREAD ON COMPLETE");
                 }
-
                 if (!streaming) {
                     if (shuffle == true) {
                         Random r = new Random();
                         current = r.nextInt(songs.size() - 1);
+                    }
+                    if(playlist_play==1)
+                    {
+                        from_playlist("next");
                     }
                     try {
                         next1();
@@ -386,15 +348,16 @@ public class MainActivity extends AppCompatActivity {
                             Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
                             Drawable d = new BitmapDrawable(getResources(), c);
                             musicpage.i1.setBackground(d);
+                            musicpage.background(c);
                         } catch (Exception e) {
                             musicpage.i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
+                            musicpage.c1.setBackgroundColor(getResources().getColor(R.color.black));
                         }
                         Log.i("values", "SONG COMPLETE STARTING NEXT IN MAIN");
                         appendLog("SONG COMPLETE STARTING NEXT IN MAIN");
                     }
                 }
             }});
-
         r.setOnTouchListener(new OnSwipeTouchListener(MainActivity.this) {
             public void onSwipeTop() {
                 if (!streaming) {
@@ -455,34 +418,43 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 Log.i("values", "IN BOTTOM BAR MAIN");
                 appendLog("IN BOTTOM BAR MAIN");
-
                 switch(menuItem.getItemId())
                 {
                     case R.id.action_downloader:
                         Log.i("values", "CLICKED DOWNLOADER");
                         appendLog("CLICKED DOWNLOADER");
-                        Intent i=new Intent(getApplicationContext(), Ytsearch.class);
-                        i.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT|Intent.FLAG_ACTIVITY_RETAIN_IN_RECENTS|Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                        startActivity(i);
+                        search.setEnabled(false);
+                        fm.beginTransaction().show(yt).hide(play).hide(home).commit();
                         break;
                     case R.id.action_player:
                         if (!streaming) {
                             if (first != 0) {
                                 Log.i("values", "CLICKED PLAYER");
                                 appendLog("CLICKED PLAYER");
-
                                 Intent i2 = new Intent(getApplicationContext(), musicpage.class);
-                                i2.putExtra("name", song_name.get(current));
-                                int k = mediaPlayer.getCurrentPosition();
-                                i2.putExtra("prog", String.valueOf(k));
                                 String s = songs.get(current);
-                                i2.putExtra("art", s);
                                 startActivity(i2);
-                                break;
                             }
                         };
+                        break;
+                    case R.id.action_playlist:
+                        search.setEnabled(false);
+                        fm.beginTransaction().show(play).hide(home).hide(yt).commit();
+                        break;
+                    case R.id.home:
+                        try {
+                            search.setEnabled(true);
+                        } catch (Exception ex) {
+                        }
+                        fm.beginTransaction().show(home).hide(yt).hide(play).commit();
+                        break;
                 } return true;
             }});
+    }
+
+    public void setting_page(View view)
+    {
+        startActivity(new Intent(MainActivity.this,Setting.class));
     }
     static public void stop_call(Context context)
     {
@@ -525,6 +497,47 @@ public class MainActivity extends AppCompatActivity {
             }
         };
     }
+    public static void from_playlist(String what)
+    {
+        int z= what.equals("prev")?-1:1;
+        int new_index=playlist_index+z;
+        Log.d("prev index", String.valueOf(new_index));
+        if(playlist_songs.size()<=new_index)
+            new_index=0;
+        else if(new_index==-1)
+            new_index=playlist_songs.size()-1;
+        playlist_index=new_index;
+        Log.d("prev playting", new_index+"   "+ playlist_index);
+        String k=(playlist_songs.get(new_index));
+        int p=songs.indexOf(k);
+        current=p;
+        Log.d("prev", k);
+    }
+    static public void play(int position)
+    {
+        Log.i("values", "SongLIST ITEM CLICKED");
+        appendLog("SongLIST ITEM CLICKED");
+        image=R.drawable.pause;
+        streaming=false;
+        try {
+            InputMethodManager imm = (InputMethodManager) main.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(main.getCurrentFocus().getWindowToken(), 0);
+        } catch (Exception e) {
+            appendLog(String.valueOf(e));
+        }
+        if(temp4.size()>0 && search.isEnabled())
+        {
+            position= temp4.get(position);
+        }
+        String songname = songs.get(position);
+        stopifSongPlaying();
+        current = position;
+        s.setEnabled(true);
+        media(songname);
+        first = 1;
+        check();
+        Log.d("VALUES", songs.get(current)+" \n "+song_dur.get(current));
+    }
 
    static public void appendLog(String text)
     {
@@ -534,8 +547,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("values","CANT CREATE DIRECTORY MUSIC");
             }
         }
-        File path=con_main.getExternalFilesDir("");
-        logFile=new File(path,"log.txt");
+
+        try {
+            File path = con_main.getExternalFilesDir("");
+            logFile = new File(path, "log.txt");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         if (!logFile.exists())
         {
@@ -577,25 +595,21 @@ public class MainActivity extends AppCompatActivity {
             public void run()
             {
                 try {
-                    Connection.Response rep = Jsoup.connect("https://www.youtube.com/results?search_query=")
+                    Connection.Response rep = Jsoup.connect("https://www.bing.com/videos/search?q=")
                             .timeout(500)
-                            .userAgent("Mozilla")
-                            .ignoreContentType(true)
+                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36")
                             .referrer("https://www.google.com")
                             .followRedirects(true)
                             .execute();
                     appendLog("RESPONSE CODE "+rep.statusCode()+"   "+rep.statusMessage());
                     MainActivity.doc=rep.parse();
-                    rep= Jsoup.connect( "https://www.bing.com/images/search?q=help&qs=MM&form=QBIR&sp=1&ghc=1&pq=help")
-                            .userAgent("Mozilla")
+                    rep= Jsoup.connect( "https://www.bing.com/images/search?q=Billie+Eilish+-+all+the+good+girls+go+to+hell+song&qpvt=Billie+Eilish+-+all+the+good+girls+go+to+hell+song&FORM=IARRSM")
+                            .userAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
                             .timeout(500)
                             .ignoreContentType(true)
                             .referrer("https://www.google.com")
                             .followRedirects(true)
                             .execute();
-                    imagedoc=rep.parse();
-                    imageurl = new URL("https://tse1.mm.bing.net/th/id/OIP.j1t41Gdm6a5gaOg1Htw93wHaEq?w=230&amp;h=170&amp;rs=1&amp;pcl=dddddd&amp;o=5&amp;pid=1.1");
-                    imageurl.openConnection();
                     appendLog("Scrap Main Done");
                 } catch (IOException e) {
                     appendLog("Scrap_speed"+String.valueOf(e));
@@ -604,10 +618,31 @@ public class MainActivity extends AppCompatActivity {
         };
         ch.start();
     }
+    public static Bitmap drawableToBitmap (Drawable drawable) {
+        Bitmap bitmap = null;
+
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if(bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        }
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
     static public void downloadfinished(Context ctx){
     Log.i("values", "DOWNLOAD FINISHED");
     appendLog("DOWNLOAD FINISHED");
-     onComplete=new BroadcastReceiver() {
+        onComplete=new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -625,16 +660,28 @@ public class MainActivity extends AppCompatActivity {
                         {
                             Ytsearch.change_format(context);
                             Ytsearch.add_tags(context);
-                            try {
-                                Log.d("values","updated");
-                                List_Async ls=new List_Async(context);
-                                MediaScannerConnection.scanFile(ctx, new String[]{String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)),String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC))}, new String[]{"audio/*"}, new MediaScannerConnection.OnScanCompletedListener() {
 
-                                    @Override
+                            try {
+                                Log.d("values", "updated");
+                               // List_Async ls = new List_Async(context);
+                                if (Build.VERSION.SDK_INT >=Build.VERSION_CODES.O)
+                                {
+                                   /* MediaScannerConnection.scanFile(ctx, new String[]{String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)), String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC))}, new String[]{"audio/*"}, new MediaScannerConnection.OnScanCompletedListener() {
+                                        @Override
                                         public void onScanCompleted(String s, Uri uri) {
-                                        ls.execute(Ytsearch.name);
-                                    }
-                                });
+                                            ls.execute("0");
+
+                                        }
+                                    });*/
+                                    new SingleMediaScanner(MainActivity.con_main, new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC) + "/" + Ytsearch.filetitle));
+                                }
+                                else
+                                {
+                                    Uri contentUri = Uri.fromFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
+                                    Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                    mediaScanIntent.setData(contentUri);
+                                    main.sendBroadcast(mediaScanIntent);
+                                }
                             } catch (Exception ex) {
                                 ex.printStackTrace();
                                 appendLog(String.valueOf(ex));
@@ -672,17 +719,19 @@ public class MainActivity extends AppCompatActivity {
         Log.i("values", "CREATING LIST");
         appendLog("CREATING LIST");
 
-        madapter=new myAdapter(ctx,song_name, song_artist,songs);
-        madapter.notifyDataSetChanged();
-        list.setAdapter(madapter);
-
-
+       // madapter=new myAdapter(ctx,song_name, song_artist,songs);
+        RecyclerView.LayoutManager layoutManager= new LinearLayoutManager(ctx);
+       // madapter.notifyDataSetChanged();
+        list.setLayoutManager(layoutManager);
+        adap.notifyDataSetChanged();
+        list.setAdapter(adap);
+        //  list.setAdapter(madapter);
     }
   @Override
     public boolean onCreateOptionsMenu(Menu menu) {
       MenuInflater inflater = getMenuInflater();
       inflater.inflate(R.menu.menu, menu);
-      MenuItem search=menu.findItem(R.id.action_search);
+      search=menu.findItem(R.id.action_search);
       SearchView sv= (SearchView)MenuItemCompat.getActionView(search);
       EditText txtSearch=(sv.findViewById(R.id.search_src_text));
       ImageView searchclose=sv.findViewById(R.id.search_close_btn);
@@ -690,6 +739,20 @@ public class MainActivity extends AppCompatActivity {
       txtSearch.setTextColor(Color.GRAY);
       txtSearch.setHint("Search by Title Or Artist");
       txtSearch.setHintTextColor(Color.GRAY);
+      search.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+          @Override
+          public boolean onMenuItemActionExpand(MenuItem menuItem) {
+              return true;
+          }
+
+          @Override
+          public boolean onMenuItemActionCollapse(MenuItem menuItem) {
+              list.setVisibility(View.VISIBLE);
+              adap.notifyDataSetChanged();
+              list.setAdapter(adap);
+              return true;
+          }
+      });
       sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
           @Override
           public boolean onQueryTextSubmit(String s) {
@@ -712,14 +775,20 @@ public class MainActivity extends AppCompatActivity {
                       temp4.add(i);
                   }
               }
-              if(temp4.size()<0 || temp4.size()==songs.size())
-            { myAdapter myAdapter=new myAdapter(MainActivity.this,song_name,song_artist,songs );
-                myAdapter.notifyDataSetChanged();
-                list.setAdapter(myAdapter);}
+              if(temp4.size()<0 || temp4.size()==songs.size()) {
+                  list.setVisibility(View.VISIBLE);
+                  adap.notifyDataSetChanged();
+              }
+              else if(temp4.size()==0)
+              {
+                  list.setVisibility(View.GONE);
+              }
               else
-              {searchAdapter madapter=new searchAdapter(MainActivity.this,temp, temp2,temp3);
+              { MainList madapter=new MainList();
                   madapter.notifyDataSetChanged();
-                  list.setAdapter(madapter);}
+                  list.setAdapter(madapter);
+                  list.setVisibility(View.VISIBLE);
+              }
               return false;
           }
       });
@@ -733,11 +802,14 @@ public class MainActivity extends AppCompatActivity {
         if(streaming==true)
             requestAudio();
         fileopen();
+        try {
+            bv.setSelectedItemId(R.id.home);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         super.onResume();
         Log.i("values", "OUT OF RESUME MAIN");
         appendLog("OUT OF RESUME MAIN");
-
-
     }
     public void fileopen() {
         Log.i("values", "OPENING FILE MAIN");
@@ -789,17 +861,20 @@ public class MainActivity extends AppCompatActivity {
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build();
-         AudioFocusRequest mAudioFocusRequest =
-                new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                        .setAudioAttributes(mAudioAttributes)
-                        .setAcceptsDelayedFocusGain(true)
-                        .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
-                        .build();
-        int result = audioManager.requestAudioFocus(mAudioFocusRequest);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            Log.d("AudioFocus", "Audio focus received");
-        } else {
-            Log.d("AudioFocus", "Audio focus NOT received");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            AudioFocusRequest mAudioFocusRequest =
+                    new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                            .setAudioAttributes(mAudioAttributes)
+                            .setAcceptsDelayedFocusGain(true)
+                            .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
+                            .build();
+
+            int result = audioManager.requestAudioFocus(mAudioFocusRequest);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                Log.d("AudioFocus", "Audio focus received");
+            } else {
+                Log.d("AudioFocus", "Audio focus NOT received");
+            }
         }
     }
     static public void shuffleon1() {
@@ -865,8 +940,10 @@ public class MainActivity extends AppCompatActivity {
         b1.setVisibility(View.VISIBLE);
         t3.setText("0:00");
         requestAudio();
-            mediaPlayer.reset();
+        if(mediaPlayer==null)
+            mediaPlayer=new MediaPlayer();
         try {
+            mediaPlayer.reset();
             mediaPlayer.setDataSource(path);
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -938,10 +1015,20 @@ public class MainActivity extends AppCompatActivity {
                     s.setProgress(currentPosition);
                     int min = (currentPosition / 1000) / 60;
                     int sec = (currentPosition / 1000) % 60;
-                    if (sec < 10)
-                        t3.setText(min + ":0" + sec);
-                    else
-                        t3.setText(min + ":" + sec);
+                    try {
+                        main.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (sec < 10)
+                                    t3.setText(min + ":0" + sec);
+                                else
+                                    t3.setText(min + ":" + sec);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+
                     if(k1==1)
                     {
                         int finalCurrentPosition = currentPosition;
@@ -950,6 +1037,7 @@ public class MainActivity extends AppCompatActivity {
                         main.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+
                                 if (sec < 10)
                                     musicpage.t2.setText(min + ":0" + sec);
                                 else
@@ -984,6 +1072,8 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 current = current - 1;
             }
+            if(playlist_play==1)
+                from_playlist("prev");
             if (shuffle == true) {
                 Random r = new Random();
                 current = r.nextInt(songs.size() - 1);
@@ -1007,6 +1097,8 @@ public class MainActivity extends AppCompatActivity {
                     current = 0;
                 else
                     current = current + 1;
+                if(playlist_play==1)
+                    from_playlist("next");
                 if (shuffle == true) {
                     Random r = new Random();
                     current = r.nextInt(songs.size() - 1);
@@ -1049,8 +1141,8 @@ public class MainActivity extends AppCompatActivity {
             // Requesting the permission
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, requestCode);
         }
-        else if(requestCode==101)
-        all_Stuff();
+        else if(requestCode==101)//if permission already granted
+           all_Stuff();
     }
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -1069,9 +1161,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-  static public void getsong(Context context) {
+  static public void getsong(Context context, String ch) {
         clear();
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+     //   songInfo=new ArrayList<>(); //if not done then causes crash cause index out of bound.
+      String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
         ContentResolver contentResolver = context.getContentResolver();
         Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         String[] projection = {
@@ -1081,9 +1174,11 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.DISPLAY_NAME,
                 MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.ALBUM
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ALBUM_ID
         };
-        Cursor songCursor = contentResolver.query(songUri, projection, selection, null, MediaStore.Audio.Media.DEFAULT_SORT_ORDER+" ASC");
+        int i=0;
+      Cursor songCursor = contentResolver.query(songUri, projection, selection, null, MediaStore.Audio.Media.DEFAULT_SORT_ORDER+" ASC");
         if (songCursor != null && songCursor.moveToFirst()) {
             do {
                 String data = songCursor.getString(3);
@@ -1092,6 +1187,7 @@ public class MainActivity extends AppCompatActivity {
                 String artist=songCursor.getString(1);
                 String album=songCursor.getString(6);
                 long dur=songCursor.getLong(5);
+                long album_id=songCursor.getLong(7);
                 int k = Integer.parseInt(songCursor.getString(5));
                 if (k > 60000) {
                     songs.add(data);
@@ -1100,6 +1196,18 @@ public class MainActivity extends AppCompatActivity {
                     song_artist.add(artist);
                     song_dur.add(dur);
                     song_album.add(album);
+                    if(ch.equals("0") && !songInfo.get(i).get_Song().equals(data) ) {
+                        SongItems ob = new SongItems(data, title, artist, dur, album, album_id);
+                        ob.set_Artwork();
+                        songInfo.add(i,ob);
+                    }
+                    else if(ch.equals("1"))
+                    {
+                        SongItems ob = new SongItems(data, title, artist, dur, album, album_id);
+                        ob.set_Artwork();
+                        songInfo.add(ob);
+                    }
+                    i++;
                 }
             } while (songCursor.moveToNext());
         }
@@ -1113,6 +1221,7 @@ public class MainActivity extends AppCompatActivity {
         song_album.clear();
         song_dur.clear();
         song_id.clear();
+       // songInfo.clear();
     }
 
 
@@ -1142,9 +1251,12 @@ public class MainActivity extends AppCompatActivity {
             int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
+            channel.canShowBadge();
+
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+        return;
     }
     public static boolean Check_Internet(Context context)
     {
@@ -1165,16 +1277,42 @@ class List_Async extends AsyncTask<String, String, String> {
     }
     @Override
     protected String doInBackground(String... strings) {
-        Log.i("values", "IN LIST ASYNC");
-        MainActivity.getsong(ctx);
-        return null;
+        Log.i("values", "IN LIST ASYNC" +strings[0]);
+        MainActivity.getsong(ctx , strings[0]);
+        return strings[0];
     }
     @Override
     protected void onPostExecute(String result)
     {
-       // MainActivity.list.setAdapter(null);
-       // MainActivity.createList(MainActivity.main);
-        MainActivity.madapter.notifyDataSetChanged();// not go to top when update list
-        Log.i("values", "LEAVING LIST ASYNC");
+        if(result.equals("0"))
+        MainActivity.adap.notifyDataSetChanged();// not go to top when update list
+        else {
+            Log.i("values", "LEAVING LIST ASYNC");
+            MainActivity.createList(MainActivity.main);
+        }
     }
+}
+class SingleMediaScanner implements MediaScannerConnection.MediaScannerConnectionClient {
+
+    private MediaScannerConnection mMs;
+    private File mFile;
+
+    public SingleMediaScanner(Context context, File f) {
+        mFile = f;
+        mMs = new MediaScannerConnection(context, this);
+        mMs.connect();
+    }
+
+    @Override
+    public void onMediaScannerConnected() {
+        mMs.scanFile(mFile.getAbsolutePath(), null);
+    }
+
+    @Override
+    public void onScanCompleted(String path, Uri uri) {
+        MainActivity.ls=new List_Async(MainActivity.con_main);
+        MainActivity.ls.execute("0");
+        mMs.disconnect();
+    }
+
 }

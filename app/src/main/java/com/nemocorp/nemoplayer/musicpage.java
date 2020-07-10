@@ -1,6 +1,8 @@
 package com.nemocorp.nemoplayer;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -11,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -23,9 +26,15 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.palette.graphics.Palette;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -36,16 +45,18 @@ import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
 import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.mp4.Mp4FieldKey;
 import org.jaudiotagger.tag.mp4.Mp4Tag;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,14 +82,17 @@ public class musicpage extends AppCompatActivity {
     static Button b1,b3,b4;
     Button b2;
     Intent i;
-    static String prog;
+    static List<Drawable> draw;
     static String change_name_of="none";
     static String new_name="";
     static ImageView i1;
     static Thread th;
-    LinearLayout c1;
+    static LinearLayout c1;
+    static List<String> resultUrls;
     Intent service;
-    Bitmap new_thumbnail;
+    static Bitmap new_thumbnail;
+    static Context ct_main;
+    static Activity music;
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,9 +102,14 @@ public class musicpage extends AppCompatActivity {
         MainActivity.appendLog("MUSICPAGE CREATED");
         t1 = findViewById(R.id.t1);
         t1.setSelected(true);
+        draw=new ArrayList<>();
+        ct_main=getApplicationContext();
+        music=musicpage.this;
         t4=findViewById(R.id.t2);
         b1 = findViewById(R.id.button);
         b2=findViewById(R.id.button3);
+        change_name_of="none";
+        new_name="";
         b3=findViewById(R.id.repeat);
         b4=findViewById(R.id.shuf);
         t2=findViewById(R.id.start);
@@ -141,20 +160,7 @@ public class musicpage extends AppCompatActivity {
                     }
                     public void onSwipeRight() {
                         MainActivity.next1();
-                            MediaMetadataRetriever m= new MediaMetadataRetriever();
-                            m.setDataSource(songs.get(MainActivity.current));
-                            try {
-                                byte[] a = m.getEmbeddedPicture();
-                                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                                Drawable d = new BitmapDrawable(getResources(), c);
-                                i1.setBackground(d);
-                                background(c);
-                            } catch (Exception e) {
-                                i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
-                                c1.setBackgroundColor(getResources().getColor(R.color.black));
-                                t1.setTextColor(getResources().getColor(R.color.white));
-                                t4.setTextColor(getResources().getColor(R.color.white));
-                            }
+                           change_Album_Art();
                                 int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
                                 int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
                                 if (sec >= 10)
@@ -162,7 +168,6 @@ public class musicpage extends AppCompatActivity {
                                 else
                                     t3.setText(min + ":0" + sec);
                                 t2.setText("0:00");
-                            //    seek();
                                 if (!song_artist.get(current).equals("<unknown>")) {
                                     t1.setText(song_name.get(current));
                                     t4.setText(song_artist.get(current));
@@ -173,20 +178,7 @@ public class musicpage extends AppCompatActivity {
                     }
                     public void onSwipeLeft() {
                         MainActivity.previous1();
-                        MediaMetadataRetriever m = new MediaMetadataRetriever();
-                        m.setDataSource(songs.get(MainActivity.current));
-                        try {
-                            byte[] a = m.getEmbeddedPicture();
-                            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                            Drawable d = new BitmapDrawable(getResources(), c);
-                            i1.setBackground(d);
-                            background(c);
-                        } catch (Exception e) {
-                            i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
-                            c1.setBackgroundColor(getResources().getColor(R.color.black));
-                            t1.setTextColor(getResources().getColor(R.color.white));
-                            t4.setTextColor(getResources().getColor(R.color.white));
-                        }
+                       change_Album_Art();
                         int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
                         int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
                         if (sec >= 10)
@@ -194,7 +186,6 @@ public class musicpage extends AppCompatActivity {
                         else
                             t3.setText(min + ":0" + sec);
                         t2.setText("0:00");
-                       // seek();
                             if (!song_artist.get(current).equals("<unknown>")) {
                                 t1.setText(song_name.get(current));
                                 t4.setText(song_artist.get(current));
@@ -208,8 +199,7 @@ public class musicpage extends AppCompatActivity {
             }
         },1000);
         k1=1;
-        prog=i.getStringExtra("prog");
-        int current=Integer.valueOf(prog);
+        int current= mediaPlayer.getCurrentPosition();
         int min = (current / 1000) / 60;
         int sec = (current/ 1000) % 60;
         if (sec<10)
@@ -224,20 +214,7 @@ public class musicpage extends AppCompatActivity {
             t3.setText(min+":0"+sec);
         else
         t3.setText(min+":"+sec);
-        MediaMetadataRetriever m= new MediaMetadataRetriever();
-        m.setDataSource(songs.get(MainActivity.current));
-            try {
-                byte[] a = m.getEmbeddedPicture();
-                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                Drawable d = new BitmapDrawable(getResources(), c);
-                i1.setBackground(d);
-                background(c);
-            } catch (Exception e) {
-                i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
-                c1.setBackgroundColor(getResources().getColor(R.color.black));
-                t1.setTextColor(getResources().getColor(R.color.white));
-                t4.setTextColor(getResources().getColor(R.color.white));
-            }
+       change_Album_Art();
         MainActivity.appendLog("MUSICPAGE ON CREATE FINISHED");
             t1.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -263,12 +240,12 @@ public class musicpage extends AppCompatActivity {
 
     }
 
-    public Palette createPaletteSync(Bitmap bitmap) {
+    public static Palette createPaletteSync(Bitmap bitmap) {
         Palette p = Palette.from(bitmap).generate();
         return p;
     }
 
-     public void background(Bitmap c)
+     static public void background(Bitmap c)
      {
          try {
              Palette p = createPaletteSync(c);
@@ -319,8 +296,26 @@ public class musicpage extends AppCompatActivity {
     }
     public void Name_Dialog() {
         final EditText taskEditText = new EditText(this);
+        String title;
+        if(change_name_of=="title") {
+            taskEditText.setText(song_name.get(current));
+            title="Change Song Name";
+        }
+        else if(change_name_of=="artist") {
+            taskEditText.setText(song_artist.get(current));
+            title="Change Artist Name";
+        }
+        else {
+            String name=song_name.get(current);
+            String art=song_artist.get(current);
+            if(name.contains(art))
+                taskEditText.setText(name);
+            else
+                taskEditText.setText(name+" "+art);
+            title="Search For Album";
+        }
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Change Name")
+                .setTitle(title)
                 .setMessage("Enter The Name")
                 .setView(taskEditText)
                 .setCancelable(false)
@@ -329,8 +324,9 @@ public class musicpage extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         new_name= String.valueOf(taskEditText.getText());
                         if(change_name_of=="album" && !new_name.equals(""))
-                            Get_Thumnail();
+                           // Get_Thumnail();
                            // test(null);
+                            test2();
                         else if(!new_name.equals(song_name.get(current)) && !new_name.equals(song_artist.get(current)))
                             name_change();
                         dialog.cancel();
@@ -343,12 +339,7 @@ public class musicpage extends AppCompatActivity {
                     }
                 })
                 .create();
-        if(change_name_of=="title")
-            taskEditText.setText(song_name.get(current));
-        else if(change_name_of=="artist")
-            taskEditText.setText(song_artist.get(current));
-
-        dialog.show();
+   dialog.show();
     }
     public void name_change()
     {
@@ -396,21 +387,21 @@ public class musicpage extends AppCompatActivity {
                 }
             });
     }
-    public void change_Album_Art()
+    static public void change_Album_Art()
     {
         MediaMetadataRetriever m= new MediaMetadataRetriever();
         m.setDataSource(songs.get(MainActivity.current));
         try {
             byte[] a = m.getEmbeddedPicture();
             Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-            Drawable d = new BitmapDrawable(getResources(), c);
+            Drawable d = new BitmapDrawable(music.getResources(), c);
             i1.setBackground(d);
             background(c);
         } catch (Exception e) {
-            i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
-            c1.setBackgroundColor(getResources().getColor(R.color.black));
-            t1.setTextColor(getResources().getColor(R.color.white));
-            t4.setTextColor(getResources().getColor(R.color.white));
+            i1.setBackground(music.getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
+            c1.setBackgroundColor(music.getResources().getColor(R.color.black));
+            t1.setTextColor(music.getResources().getColor(R.color.white));
+            t4.setTextColor(music.getResources().getColor(R.color.white));
         }
     }
 
@@ -497,7 +488,8 @@ public class musicpage extends AppCompatActivity {
                         }
                         //Log.d("values",resultUrls.get(0)+"");
                         if(resultUrls.size()>0) {
-                            downloadImages(resultUrls.get(0));
+                            for(int i1=0; i1<resultUrls.size();i1++)
+                                downloadImages(resultUrls.get(i1));
                             break;
                         }
                        // else
@@ -509,7 +501,7 @@ public class musicpage extends AppCompatActivity {
             }};
         thumbnail.start();
     }
-    public void test(View view)//Google
+    public void test()//Google
     {
         List<String> resultUrls = new ArrayList<String>();
         Log.d("valuephoto", "testing");
@@ -555,45 +547,93 @@ public class musicpage extends AppCompatActivity {
 
 
     }
-    private final Handler uiHandler = new Handler();
+    public void test2() { //bing full size
+        resultUrls = new ArrayList<String>();
+        new_name+=" song";
+        try {
+            new_name=URLEncoder.encode(new_name,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        Log.d("array", new_name);
+        Thread thumbnail2 = new Thread() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        Log.d("valuephoto", "testing222");
+                            String url="https://www.bing.com/images/search?q="+new_name+"&qpvt="+new_name+"&FORM=IARRSM";
+                            Log.d("arrayurl", url);
+                        Connection.Response res = Jsoup.connect(url)
+                                .followRedirects(false)
+                                .timeout(0)
+                                .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
+                                .execute();
+                        String location = res.header("Location");
 
-    private class JSHtmlInterface {
-        @android.webkit.JavascriptInterface
-        public void showHTML(String html) {
-            final String htmlContent = html;
-
-            uiHandler.post(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            Document doc = Jsoup.parse(htmlContent);
-                            Log.d("values", doc.toString());
-                            Elements elements = doc.getElementsByClass("eHAdSb");
-                            for (Element element : elements) {
-                                Log.d("values", element.toString()+" help");
+                        res = Jsoup.connect(url)
+                                .timeout(0)
+                                .data("is_check", "1")
+                                .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
+                                .header("Referer", location)
+                                .execute();
+                        Document doc = res.parse();
+                        Elements img = doc.getElementsByClass("iusc");
+                        for (Element e : img) {
+                            try {
+                                JSONObject js=new JSONObject(e.attr("m"));
+                                Log.d("array", js.optString("turl"));
+                                resultUrls.add(js.optString("turl"));
+                            } catch (JSONException ex) {
+                                ex.printStackTrace();
                             }
                         }
+                          if(resultUrls.size()>0) {
+             //                 Thumbnail_Scrap ts=new Thumbnail_Scrap();
+               //               ts.execute();
+                              downloadImages(resultUrls.get(0));
+                           break;
+                          }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-            );
-        }
+                }
+            }
+        };
+        thumbnail2.start();
     }
-    public void downloadImages(String inSrc) throws IOException {
-        MainActivity.imageurl = new URL(inSrc);
-        new_thumbnail=BitmapFactory.decodeStream(MainActivity.imageurl.openConnection().getInputStream());
+   static  public void downloadImages(String inSrc) throws IOException {
+    /*    URL imageurl = new URL(inSrc);
+        new_thumbnail=BitmapFactory.decodeStream(imageurl.openConnection().getInputStream());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new_thumbnail.compress(Bitmap.CompressFormat.PNG, 90, baos);
         byte[] Byte=baos.toByteArray();
         Bitmap bit = BitmapFactory.decodeByteArray(Byte, 0, Byte.length);
         new_thumbnail=bit;
-        Drawable d = new BitmapDrawable(getResources(), new_thumbnail);
-        runOnUiThread(new Runnable() {
+        Drawable d = new BitmapDrawable(ct_main.getResources(), new_thumbnail);
+        draw.add(d);
+         MainActivity.main.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 i1.setBackground(d);
-                Toast.makeText(getApplicationContext(),"CHANGED PICTURE", Toast.LENGTH_LONG).show();
+                Toast.makeText(ct_main,"Images Downloaded", Toast.LENGTH_LONG).show();
+               // ct_main.startActivity(new Intent(musicpage.this,Show_Thumnail.class));
             }
-        });
+        });*/
+     MainActivity.main.runOnUiThread(new Runnable() {
+         @Override
+         public void run() {
+             Glide.with(music).load(inSrc).into(new SimpleTarget<Drawable>() {
+                 @Override
+                 public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+                     i1.setBackground(resource);
+                     background(MainActivity.drawableToBitmap(resource));
+                     Log.d("Downloaded", "onResourceReady: ");
+                 }
+             });
+         }});
     }
+
     @Override
     public void onBackPressed()
     {
@@ -616,7 +656,43 @@ public class musicpage extends AppCompatActivity {
     public void onDestroy()
     {
         k1=0;
+        t1=t2=t3=t4=null;
+        s2=null;
+        b1=b3=b4=null;
+        music=null;
+        c1=null;
+        draw=null;
+        change_name_of=null;
+        new_name=null;
+        i1=null;
+        th=null;
+         c1=null;
+        resultUrls=null;
+        new_thumbnail=null;
+         ct_main=null;
+         music=null;
         super.onDestroy();
+    }
+}
+class Thumbnail_Scrap extends AsyncTask<String, String, String>{
+
+    @Override
+    protected String doInBackground(String... strings) {
+        for(int i=0;i<musicpage.resultUrls.size()&& i<3; i++) {
+            try {
+                musicpage.downloadImages(musicpage.resultUrls.get(i));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+    @Override
+    protected void onPostExecute(String result)
+    {
+       Intent i= new Intent(musicpage.ct_main, Show_Thumnail.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        musicpage.ct_main.startActivity(i);
     }
 }
 

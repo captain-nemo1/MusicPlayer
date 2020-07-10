@@ -7,16 +7,27 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:orientation="vertical"
-    tools:context=".musicpage"
-    android:paddingTop="50dp"
-    android:paddingLeft="20dp"
+    android:paddingTop="10dp"
     android:paddingRight="20dp"
     android:paddingBottom="10dp">
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <Button
+            android:id="@+id/button3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
+            android:background="@drawable/down1" />
+    </RelativeLayout>
     <androidx.cardview.widget.CardView
     android:layout_width="match_parent"
     android:layout_height="0dp"
     android:layout_weight="3"
+    android:layout_marginLeft="20dp"
     app:cardCornerRadius="12dp"
     android:elevation="10dp"
     >
@@ -32,6 +43,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
+        android:layout_marginStart="20dp"
         android:layout_height="0dp"
         android:layout_weight="3">
 
@@ -125,19 +137,6 @@
             android:layout_toEndOf="@+id/button"
             android:background="@drawable/shuffle1"
             android:onClick="shuffle" />
-
-        <Button
-            android:id="@+id/button3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/repeat"
-            android:layout_marginLeft="30dp"
-            android:layout_marginTop="36dp"
-            android:layout_marginEnd="25dp"
-            android:layout_toLeftOf="@+id/button"
-            android:adjustViewBounds="true"
-            android:scaleType="centerCrop"
-            android:background="@drawable/down1" />
 
     </RelativeLayout>
 

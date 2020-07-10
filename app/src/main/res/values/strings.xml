@@ -14,4 +14,6 @@
     <string name="label_play_pause">Play and pause toggle</string>
     <string name="label_previous">Previous track</string>
     <string name="label_next">Next track</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

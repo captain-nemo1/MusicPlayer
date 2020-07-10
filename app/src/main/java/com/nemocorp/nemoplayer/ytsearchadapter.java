@@ -35,9 +35,13 @@ public class ytsearchadapter extends ArrayAdapter {
         TextView textView1 = row.findViewById(R.id.textView3);
         TextView textView2 = row.findViewById(R.id.textView4);
         TextView textView3 = row.findViewById(R.id.textView5);
-        textView1.setText(title.get(position));
-        textView2.setText(channel.get(position));
-        textView3.setText(dur.get(position));
+        try {
+            textView1.setText(title.get(position));
+            textView2.setText(channel.get(position));
+            textView3.setText(dur.get(position));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         b1=row.findViewById(R.id.button2);
         b2=row.findViewById(R.id.button5);
         b1.setTag(position);
@@ -56,7 +60,19 @@ public class ytsearchadapter extends ArrayAdapter {
                 Ytsearch.download_links(pos,"2");
             }
         });
+        try {
+            if (title.get(position).length() <= 0 || dur.get(position).trim().equals("Playlis")
+                    || dur.get(position).trim().equals("Channe"))//if no element.
+            {
+                textView1.setVisibility(View.GONE);
+                textView2.setVisibility(View.GONE);
+                textView3.setVisibility(View.GONE);
+                b1.setVisibility(View.GONE);
+                b2.setVisibility(View.GONE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return row;
-
     }
 }

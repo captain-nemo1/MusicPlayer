@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
+    <item
+        android:id="@+id/home"
+        android:icon="@drawable/home"
+        android:enabled="true"
+        android:title="Home"
+        app:showAsAction="always" />
     <item
         android:id="@+id/action_player"
         android:icon="@drawable/player"
@@ -15,4 +20,11 @@
         android:enabled="true"
         android:title="YouTube"
         app:showAsAction="always" />
+    <item
+    android:id="@+id/action_playlist"
+    android:icon="@drawable/white_music"
+    android:enabled="true"
+    android:title="Playlist"
+    app:showAsAction="always" />
+
 </menu>

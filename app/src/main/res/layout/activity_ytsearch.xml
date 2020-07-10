@@ -1,49 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/grey"
-    android:orientation="vertical"
     tools:context=".Ytsearch">
 
     <EditText
         android:id="@+id/search"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.25"
+        android:layout_height="wrap_content"
         android:autofillHints=""
         android:hint="@string/search"
         android:imeOptions="actionDone"
         android:inputType="text"
-        android:textColor="@color/white"
-        android:textColorHint="@color/white" />
+        android:textColor="@color/black"
+        android:textColorHint="@color/black" />
 
 
     <Button
         android:id="@+id/button4"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.25"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search"
         android:layout_margin="10dp"
         android:backgroundTint="@color/selector2"
         android:background="@drawable/roundedcorner"
-        android:onClick="result"
         android:text="@string/search_button"
         android:textColor="@color/white" />
-
 
     <ListView
         android:id="@+id/result"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="3"
+        android:layout_height="match_parent"
+        android:layout_below="@id/button4"
         android:choiceMode="singleChoice"
         android:divider="@null"
         android:listSelector="@color/grey">
-
     </ListView>
 
-
-</LinearLayout>
+</RelativeLayout>

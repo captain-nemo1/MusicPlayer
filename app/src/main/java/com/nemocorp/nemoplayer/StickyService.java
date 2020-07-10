@@ -37,7 +37,6 @@ import static com.nemocorp.nemoplayer.MainActivity.k1;
 import static com.nemocorp.nemoplayer.MainActivity.mediaPlayer;
 import static com.nemocorp.nemoplayer.MainActivity.notificationManager;
 import static com.nemocorp.nemoplayer.MainActivity.repeat22;
-import static com.nemocorp.nemoplayer.MainActivity.song_album;
 import static com.nemocorp.nemoplayer.MainActivity.song_artist;
 import static com.nemocorp.nemoplayer.MainActivity.song_name;
 import static com.nemocorp.nemoplayer.MainActivity.songs;
@@ -119,8 +118,9 @@ public class StickyService extends Service {
                 icon = BitmapFactory.decodeResource(con_main.getResources(), R.drawable.album);
             }
         }
-        else
+        else if(Ytsearch.streaming) {
             icon = MainActivity.stream_thumnail;
+        }
     }
 
     public int onStartCommand(Intent i, int flags, int startId )
@@ -162,15 +162,12 @@ public class StickyService extends Service {
                 .addAction(R.drawable.cancel, "Cancel", pendingIntentYes4)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(1, 2, 3).setMediaSession(token))
                 .setContentIntent(pendingIntent)
-                .setOnlyAlertOnce(true)
-                .setTimeoutAfter(mediaPlayer.getDuration())
-                .setPriority(NotificationCompat.PRIORITY_LOW);
+                .setOnlyAlertOnce(true);
         if(!Ytsearch.streaming)
         {
             builder.setContentTitle(song_name.get(current))
                     .setContentText(song_artist.get(current))
-                    .setTicker(song_name.get(current))
-                    .setSubText(song_album.get(current));
+                    .setTicker(song_name.get(current));
         }
         else
         {builder.setContentTitle(MainActivity.stream_name);

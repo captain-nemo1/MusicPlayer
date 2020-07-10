@@ -5,13 +5,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.List;
 
 import static com.nemocorp.nemoplayer.MainActivity.temp4;
-
-//import static com.nemocorp.nemoplayer.MainActivity.bitmapArray;
 
 
 public class myAdapter extends ArrayAdapter {
@@ -32,14 +31,17 @@ public class myAdapter extends ArrayAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;
-        if(temp4.size()>0)position= temp4.get(position);
+        if(temp4.size()>0 && !id.get(0).equals("playlist")) position= temp4.get(position);
         LayoutInflater inflater = context.getLayoutInflater();
         if (convertView == null)
             row = inflater.inflate(R.layout.row2, null, true);
         TextView textView1 = (TextView) row.findViewById(R.id.textView1);
         TextView textView2 = (TextView) row.findViewById(R.id.textView2);
+        ImageView img= row.findViewById(R.id.image);
         textView1.setText(title.get(position));
         textView2.setText(artist.get(position));
+        img.setVisibility(View.GONE);
+      //  Glide.with(main).load(MainActivity.songInfo.get(position).get_Artwork()).diskCacheStrategy(DiskCacheStrategy.AUTOMATIC).placeholder(R.drawable.ic_music_note_black_24dp).into(img);
         return row;
         }
 }
