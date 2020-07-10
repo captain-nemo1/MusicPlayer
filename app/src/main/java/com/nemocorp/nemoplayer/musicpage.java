@@ -13,7 +13,6 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -86,7 +85,6 @@ public class musicpage extends AppCompatActivity {
     static String change_name_of="none";
     static String new_name="";
     static ImageView i1;
-    static Thread th;
     static LinearLayout c1;
     static List<String> resultUrls;
     Intent service;
@@ -117,16 +115,7 @@ public class musicpage extends AppCompatActivity {
         s2=findViewById(R.id.seekBar2);
         c1=findViewById(R.id.lay);
         i1=findViewById(R.id.image);
-        th=new Thread();
-        if(!song_artist.get(current).equals("<unknown>"))
-        {
-            t1.setText(song_name.get(current));
-            t4.setText(song_artist.get(current));
-        }
-        else
-        { t1.setText(song_name.get(current));
-          t4.setText("");
-        }
+        song_name_change();
         check();
         service=new Intent(this, StickyService.class);
         Handler handler=new Handler();
@@ -136,63 +125,47 @@ public class musicpage extends AppCompatActivity {
                 b2.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        if(th.isAlive())
-                        {th.interrupt();        MainActivity.appendLog("MUSICPAGE INTERRUPTING ITS THREAD");
-                        }
                         MainActivity.appendLog("MUSICPAGE LEAVING");
-
                         onBackPressed();
                     }
                 });
                 c1.setOnTouchListener(new OnSwipeTouchListener(musicpage.this) {
                     public void onSwipeBottom() {
-                        if(th.isAlive())
-                            th.interrupt();
                         MainActivity.appendLog("MUSICPAGE LEAVINg SWIPE BOTTOM");
                         onBackPressed();
                     }
                     public void onSwipeTop()
                     {
-                        if(th.isAlive())
-                            th.interrupt();
                         MainActivity.appendLog("MUSICPAGE LEAVINg SWIPE up");
                         onBackPressed();
                     }
                     public void onSwipeRight() {
-                        MainActivity.next1();
-                           change_Album_Art();
-                                int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
-                                int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
-                                if (sec >= 10)
-                                    t3.setText(min + ":" + sec);
-                                else
-                                    t3.setText(min + ":0" + sec);
-                                t2.setText("0:00");
-                                if (!song_artist.get(current).equals("<unknown>")) {
-                                    t1.setText(song_name.get(current));
-                                    t4.setText(song_artist.get(current));
-                                } else {
-                                    t1.setText(song_name.get(current));
-                                    t4.setText("");
-                                }
+                        if(!Ytsearch.streaming) {
+                            MainActivity.next1();
+                            change_Album_Art();
+                            int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
+                            int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
+                            if (sec >= 10)
+                                t3.setText(min + ":" + sec);
+                            else
+                                t3.setText(min + ":0" + sec);
+                            t2.setText("0:00");
+                            song_name_change();
+                        }
                     }
                     public void onSwipeLeft() {
-                        MainActivity.previous1();
-                       change_Album_Art();
-                        int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
-                        int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
-                        if (sec >= 10)
-                            t3.setText(min + ":" + sec);
-                        else
-                            t3.setText(min + ":0" + sec);
-                        t2.setText("0:00");
-                            if (!song_artist.get(current).equals("<unknown>")) {
-                                t1.setText(song_name.get(current));
-                                t4.setText(song_artist.get(current));
-                            } else {
-                                t1.setText(song_name.get(current));
-                                t4.setText("");
-                            }
+                        if (!Ytsearch.streaming) {
+                            MainActivity.previous1();
+                            change_Album_Art();
+                            int min = Math.toIntExact((song_dur.get(current) / 1000) / 60);
+                            int sec = Math.toIntExact((song_dur.get(current) / 1000) % 60);
+                            if (sec >= 10)
+                                t3.setText(min + ":" + sec);
+                            else
+                                t3.setText(min + ":0" + sec);
+                            t2.setText("0:00");
+                            song_name_change();
+                        }
                     }
                 });
 
@@ -216,28 +189,62 @@ public class musicpage extends AppCompatActivity {
         t3.setText(min+":"+sec);
        change_Album_Art();
         MainActivity.appendLog("MUSICPAGE ON CREATE FINISHED");
+        change_tags();
+
+    }
+    public static void change_tags()
+    {
+        if(!Ytsearch.streaming) {
             t1.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    change_name_of="title";
+                    change_name_of = "title";
                     Name_Dialog();
                 }
             });
             t4.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    change_name_of="artist";
+                    change_name_of = "artist";
                     Name_Dialog();
                 }
             });
             i1.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    change_name_of="album";
+                    change_name_of = "album";
                     Name_Dialog();
                 }
             });
+        }
+        else
+        {
+            t1.setClickable(false);
+            t4.setClickable(false);
+            i1.setClickable(false);
+        }
+    }
+    public static void song_name_change(){
+        if(!Ytsearch.streaming) {
+            if (!song_artist.get(current).equals("<unknown>")) {
+                t1.setText(song_name.get(current));
+                t4.setText(song_artist.get(current));
+            } else {
+                t1.setText(song_name.get(current));
+                t4.setText("");
+            }
+        }
+        else
+        {
+            music.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    t1.setText(MainActivity.stream_name);
+                    t4.setText(MainActivity.stream_channel);
+                }
+            });
 
+        }
     }
 
     public static Palette createPaletteSync(Bitmap bitmap) {
@@ -294,8 +301,8 @@ public class musicpage extends AppCompatActivity {
         else
             b3.setBackgroundResource(R.drawable.repeat);
     }
-    public void Name_Dialog() {
-        final EditText taskEditText = new EditText(this);
+    public static void Name_Dialog() {
+        final EditText taskEditText = new EditText(musicpage.music);
         String title;
         if(change_name_of=="title") {
             taskEditText.setText(song_name.get(current));
@@ -314,7 +321,7 @@ public class musicpage extends AppCompatActivity {
                 taskEditText.setText(name+" "+art);
             title="Search For Album";
         }
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(musicpage.music)
                 .setTitle(title)
                 .setMessage("Enter The Name")
                 .setView(taskEditText)
@@ -339,9 +346,9 @@ public class musicpage extends AppCompatActivity {
                     }
                 })
                 .create();
-   dialog.show();
+               dialog.show();
     }
-    public void name_change()
+    public static void name_change()
     {
         File song_selected=new File(songs.get(current));
         if(songs.get(current).contains(".m4a")) {
@@ -355,17 +362,17 @@ public class musicpage extends AppCompatActivity {
                     else if (change_name_of.equals("title"))
                         mp4tag.setField(Mp4FieldKey.TITLE, new_name);
                     f.commit();
-                    MediaScannerConnection.scanFile(getApplicationContext(), new String[]{songs.get(current)}, new String[]{"mp3/*"}, null);
-                    Toast.makeText(getApplicationContext(), "Will Show Changed Name Next Time App is Opened.", Toast.LENGTH_LONG).show();
+                    MediaScannerConnection.scanFile(musicpage.ct_main, new String[]{songs.get(current)}, new String[]{"mp3/*"}, null);
+                    Toast.makeText(musicpage.ct_main, "Will Show Changed Name Next Time App is Opened.", Toast.LENGTH_LONG).show();
                 } catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException | CannotWriteException e) {
                     e.printStackTrace();
-                    Toast.makeText(getApplicationContext(), "Error Reading Files", Toast.LENGTH_LONG).show();
+                    Toast.makeText(musicpage.ct_main, "Error Reading Files", Toast.LENGTH_LONG).show();
                     MainActivity.appendLog("Change Artist or Title Error" + e);
                 }
             }
         }
         else
-            Toast.makeText(getApplicationContext(), "Can't change tags of formats other than m4a", Toast.LENGTH_LONG).show();
+            Toast.makeText(musicpage.ct_main, "Can't change tags of formats other than m4a", Toast.LENGTH_LONG).show();
     }
    static public void seek()
     {
@@ -391,24 +398,31 @@ public class musicpage extends AppCompatActivity {
     {
         MediaMetadataRetriever m= new MediaMetadataRetriever();
         m.setDataSource(songs.get(MainActivity.current));
-        try {
-            byte[] a = m.getEmbeddedPicture();
-            Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-            Drawable d = new BitmapDrawable(music.getResources(), c);
-            i1.setBackground(d);
-            background(c);
-        } catch (Exception e) {
-            i1.setBackground(music.getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
-            c1.setBackgroundColor(music.getResources().getColor(R.color.black));
-            t1.setTextColor(music.getResources().getColor(R.color.white));
-            t4.setTextColor(music.getResources().getColor(R.color.white));
+        if(!Ytsearch.streaming) {
+            try {
+                byte[] a = m.getEmbeddedPicture();
+                Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
+                Drawable d = new BitmapDrawable(music.getResources(), c);
+                i1.setBackground(d);
+                background(c);
+            } catch (Exception e) {
+                i1.setBackground(music.getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
+                c1.setBackgroundColor(music.getResources().getColor(R.color.black));
+                t1.setTextColor(music.getResources().getColor(R.color.white));
+                t4.setTextColor(music.getResources().getColor(R.color.white));
+            }
+        }
+        else
+        {
+            i1.setBackground(new BitmapDrawable(MainActivity.stream_thumnail));
+            background(MainActivity.stream_thumnail);
         }
     }
 
     @Override
     public void onResume()
     {
-        if(t1.getText()!=song_name.get(current) && t1.getText()!=song_artist.get(current)+"-"+song_name.get(current))
+        if(t1.getText()!=song_name.get(current) && t1.getText()!=song_artist.get(current)+"-"+song_name.get(current) && !Ytsearch.streaming)
         {
             if((!song_artist.get(current).equals("<unknown>"))&&(song_name.get(current).toLowerCase().contains(song_artist.get(current).toLowerCase()))==false)
                 t1.setText(song_artist.get(current)+"-"+song_name.get(current));
@@ -547,7 +561,7 @@ public class musicpage extends AppCompatActivity {
 
 
     }
-    public void test2() { //bing full size
+    public static void test2() { //bing full size
         resultUrls = new ArrayList<String>();
         new_name+=" song";
         try {
@@ -602,7 +616,7 @@ public class musicpage extends AppCompatActivity {
         };
         thumbnail2.start();
     }
-   static  public void downloadImages(String inSrc) throws IOException {
+   static public void downloadImages(String inSrc) throws IOException {
     /*    URL imageurl = new URL(inSrc);
         new_thumbnail=BitmapFactory.decodeStream(imageurl.openConnection().getInputStream());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -637,7 +651,7 @@ public class musicpage extends AppCompatActivity {
     @Override
     public void onBackPressed()
     {
-        if(flag==false)
+        if(!flag)
         {
             MainActivity.b1.setBackgroundResource(R.drawable.ic_play_circle_filled_black_24dp);
         }
@@ -646,9 +660,6 @@ public class musicpage extends AppCompatActivity {
             MainActivity.b1.setBackgroundResource(R.drawable.pause);
         }
         k1=0;
-        th.interrupt();
-        MainActivity.appendLog("MUSICPAGE BACK PRESSED THREAD STATUS"+th.isAlive()+"\n");
-        Log.d("Thread", String.valueOf(th.isAlive()));
         b1=null;
         super.onBackPressed();
     }
@@ -665,7 +676,6 @@ public class musicpage extends AppCompatActivity {
         change_name_of=null;
         new_name=null;
         i1=null;
-        th=null;
          c1=null;
         resultUrls=null;
         new_thumbnail=null;
@@ -674,25 +684,5 @@ public class musicpage extends AppCompatActivity {
         super.onDestroy();
     }
 }
-class Thumbnail_Scrap extends AsyncTask<String, String, String>{
 
-    @Override
-    protected String doInBackground(String... strings) {
-        for(int i=0;i<musicpage.resultUrls.size()&& i<3; i++) {
-            try {
-                musicpage.downloadImages(musicpage.resultUrls.get(i));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-    @Override
-    protected void onPostExecute(String result)
-    {
-       Intent i= new Intent(musicpage.ct_main, Show_Thumnail.class);
-        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        musicpage.ct_main.startActivity(i);
-    }
-}
 

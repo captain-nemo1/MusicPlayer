@@ -38,7 +38,6 @@ public class SongItems {
                     artwork = MediaStore.Images.Media.getBitmap(MainActivity.con_main.getContentResolver(), albumArtUri);
                     artwork = Bitmap.createScaledBitmap(artwork, 60, 60, true);
                 } catch (IOException e) {
-
                     artwork=MainActivity.drawableToBitmap(ResourcesCompat.getDrawable(MainActivity.main.getResources(),R.drawable.ic_music_note_black_24dp,null));
                 }
             }

@@ -113,13 +113,19 @@ public class StickyService extends Service {
             try {
                 byte[] a = m.getEmbeddedPicture();
                 Bitmap c = BitmapFactory.decodeByteArray(a, 0, a.length);
-                icon = c;
+                icon=c;
             } catch (Exception e) {
                 icon = BitmapFactory.decodeResource(con_main.getResources(), R.drawable.album);
             }
         }
         else if(Ytsearch.streaming) {
             icon = MainActivity.stream_thumnail;
+            if(MainActivity.k1==1)
+            {
+                musicpage.song_name_change();
+                musicpage.change_tags();
+                musicpage.change_Album_Art();
+            }
         }
     }
 

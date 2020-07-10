@@ -70,11 +70,11 @@ public class MainList extends RecyclerView.Adapter<MainList.MyViewHolder> {
             t1.setOnLongClickListener(this);
             img_more.setOnLongClickListener(this);
         }
-
         @Override
         public void onClick(View view) {
             MainActivity.play(getAdapterPosition());
             MainActivity.playlist_play=0;
+            MainActivity.remove_streaming_icon();
         }
 
         @Override

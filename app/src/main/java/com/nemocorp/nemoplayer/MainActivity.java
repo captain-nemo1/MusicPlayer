@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
                     if(loop)//when repeating start thread again
                         t.start();
 
-                    if (k1 == 1) {
+                    if (k1 == 1 && !streaming) {
                         int min = (int)((song_dur.get(current) / 1000) / 60);
                         int sec = (int) ((song_dur.get(current) / 1000) % 60);
                         if (sec >= 10)
@@ -427,15 +427,12 @@ public class MainActivity extends AppCompatActivity {
                         fm.beginTransaction().show(yt).hide(play).hide(home).commit();
                         break;
                     case R.id.action_player:
-                        if (!streaming) {
                             if (first != 0) {
                                 Log.i("values", "CLICKED PLAYER");
                                 appendLog("CLICKED PLAYER");
                                 Intent i2 = new Intent(getApplicationContext(), musicpage.class);
-                                String s = songs.get(current);
                                 startActivity(i2);
                             }
-                        };
                         break;
                     case R.id.action_playlist:
                         search.setEnabled(false);
@@ -1267,6 +1264,12 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
+    public static void remove_streaming_icon()
+    {
+        streaming=false;
+        stream_thumnail=null;
+    }
+
 
 }
 class List_Async extends AsyncTask<String, String, String> {

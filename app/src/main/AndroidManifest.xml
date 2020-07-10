@@ -25,7 +25,6 @@
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".Setting"></activity>
-        <activity android:name=".Show_Thumnail" />
 
         <service android:name=".StickyService">
             <intent-filter>
