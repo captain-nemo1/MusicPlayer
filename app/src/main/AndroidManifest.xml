@@ -24,7 +24,7 @@
         android:theme="@style/AppTheme2"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".Setting"></activity>
+        <activity android:name=".Setting"/>
 
         <service android:name=".StickyService">
             <intent-filter>
