@@ -6,5 +6,8 @@ Thanks to guys at StackOverflow for helping me with fixes and solution. Know tha
   <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo2.jpg" width="200">
   <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo3.jpg" width="200">  
   <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo4.jpg" width="200">  
-  <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo5.jpg" width="200">  
+  <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo5.jpg" width="200"> 
+  <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo6.jpg" width="200">   
+  <img src="https://github.com/captain-nemo1/MusicPlayer/blob/master/AppPhotos/nemo7.jpg" width="200">  
+
 </p>
