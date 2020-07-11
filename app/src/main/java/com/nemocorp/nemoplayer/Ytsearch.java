@@ -410,6 +410,7 @@ public class Ytsearch extends Fragment {
                 if(streaming && stream_icon_set) {
                     MainActivity.stream_thumnail = bit;
                     Ytsearch.stream_icon_set=false;
+                    StickyService.setting_icon();
                     MainActivity.main.startService(service);
                 }
             }
