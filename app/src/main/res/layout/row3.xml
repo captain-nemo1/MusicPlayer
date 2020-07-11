@@ -42,9 +42,10 @@
             android:layout_marginStart="5dp"
             android:layout_marginEnd="5dp"
             android:layout_weight="0.5"
-            android:backgroundTint="@color/selector3"
+            android:backgroundTint="@color/selector2"
             android:background="@drawable/roundedcorner"
             android:text="@string/download"
+            android:foreground="?android:selectableItemBackground"
             android:textColor="@color/white"
             android:visibility="visible" />
 
@@ -55,7 +56,8 @@
             android:layout_marginEnd="5dp"
             android:layout_weight=".5"
             android:background="@drawable/roundedcorner"
-            android:backgroundTint="@color/selector3"
+            android:backgroundTint="@color/selector2"
+            android:foreground="?android:selectableItemBackground"
             android:text="@string/stream"
             android:textAlignment="center"
             android:textColor="@color/white"

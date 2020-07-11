@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingStart="10dp"
-    android:paddingEnd="0dp"
     >
 
     <TextView
         android:id="@+id/textView1"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_row="0"
-        android:layout_column="0"
-        android:layout_columnWeight="1"
+        android:layout_alignParentStart="true"
         android:textColor="@color/selector"
         android:textSize="20sp"
         android:layout_marginTop="5dp"
@@ -20,12 +17,10 @@
 
     <TextView
         android:id="@+id/textView2"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_row="1"
-        android:layout_column="0"
-        android:layout_columnWeight="1"
         android:layout_marginBottom="8dp"
+        android:layout_below="@id/textView1"
         android:textColor="@color/selector"
         android:textSize="15sp" />
-</GridLayout>
+</RelativeLayout>

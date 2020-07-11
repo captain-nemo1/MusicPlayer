@@ -208,6 +208,7 @@ public class Ytsearch extends Fragment {
         MainActivity.s.setEnabled(true);
         MainActivity.b1.setVisibility(View.VISIBLE);
         MainActivity.flag=true;
+        MainActivity.first=1;
         MainActivity.b1.setBackgroundResource(R.drawable.pause);
         //MainActivity.check();
         streaming=true;
@@ -265,12 +266,11 @@ public class Ytsearch extends Fragment {
 
         }
     }
-    public static void convert_byte()
+    public static byte[] convert_byte(Bitmap thumnail)
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         thumnail.compress(Bitmap.CompressFormat.PNG, 90, baos);
-        Byte=baos.toByteArray();
-        Log.d("values", "converted to byte array"+String.valueOf(Byte));
+        return baos.toByteArray();
     }
     static public void add_tags(Context context) {
         File e1 = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC + "/"+name+".m4a");
@@ -305,14 +305,10 @@ public class Ytsearch extends Fragment {
                 appendLog(String.valueOf(e));
             }
             Log.d("values", String.valueOf(mp4tag));
-        } catch (CannotReadException ex) {
+        } catch (CannotReadException | IOException ex) {
             ex.printStackTrace();
             appendLog(String.valueOf(ex));
 
-            Log.d("values", String.valueOf(ex));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            appendLog(String.valueOf(ex));
             Log.d("values", String.valueOf(ex));
         } catch (TagException ex) {
             ex.printStackTrace();
@@ -409,7 +405,7 @@ public class Ytsearch extends Fragment {
                     appendLog(String.valueOf(e));
                     Log.d("values", "Failed Bitmap" + e);
                 }
-                Ytsearch.convert_byte();
+                Ytsearch.Byte=Ytsearch.convert_byte(Ytsearch.thumnail);
                 Bitmap bit = BitmapFactory.decodeByteArray(Ytsearch.Byte, 0, Ytsearch.Byte.length);
                 if(streaming && stream_icon_set) {
                     MainActivity.stream_thumnail = bit;

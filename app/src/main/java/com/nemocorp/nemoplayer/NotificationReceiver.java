@@ -37,17 +37,15 @@ public class NotificationReceiver extends BroadcastReceiver {
             Intent service=new Intent(context, StickyService.class);
             context.startService(service);
         } else if (PREV_ACTION.equals(action)) {
-                    MainActivity.previous1();
+            MainActivity.previous1();
             if(k1==1)
             {changephotoactivity2();}
-                }
+            }
              else if(NEXT_ACTION.equals(action))
             {
                     MainActivity.next1();
                 if(k1==1)
                 {changephotoactivity2();}
-
-
                 }
 
         else if(REPEAT_ACTION.equals(action))

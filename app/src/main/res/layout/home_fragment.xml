@@ -7,5 +7,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/list_recycle"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:layoutAnimation="@anim/layout_animation_left_to_right"
         android:scrollbars="vertical"/>
 </RelativeLayout>

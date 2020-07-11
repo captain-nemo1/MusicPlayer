@@ -36,7 +36,7 @@ public class SongItems {
                 Uri albumArtUri = ContentUris.withAppendedId(sArtworkUri, album_id);
                 try {
                     artwork = MediaStore.Images.Media.getBitmap(MainActivity.con_main.getContentResolver(), albumArtUri);
-                    artwork = Bitmap.createScaledBitmap(artwork, 60, 60, true);
+                    artwork = Bitmap.createScaledBitmap(artwork, 50, 50, true);
                 } catch (IOException e) {
                     artwork=MainActivity.drawableToBitmap(ResourcesCompat.getDrawable(MainActivity.main.getResources(),R.drawable.ic_music_note_black_24dp,null));
                 }
@@ -47,6 +47,10 @@ public class SongItems {
     public Bitmap get_Artwork()
     {
         return artwork;
+    }
+    public void Set_ARTWORK(Bitmap temp){ //used when we download thumnail in musicpage
+        artwork=temp;
+        MainActivity.adap.notifyItemChanged(MainActivity.current);
     }
 
     public long get_Album_id(){
@@ -69,5 +73,7 @@ public class SongItems {
     public String get_Album(){
         return  album;
     }
+    public void Set_Title(String title){song_name=title;}
+    public void Set_Artist(String artist){song_artist=artist;}
 
 }

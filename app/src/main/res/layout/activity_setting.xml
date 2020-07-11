@@ -30,7 +30,7 @@
     </androidx.appcompat.widget.Toolbar>
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="250dp"
         android:elevation="10dp"
         android:layout_below="@+id/tool"
         android:layout_margin="20dp"
@@ -59,16 +59,16 @@
                 android:textColor="@color/grey2"
                 android:textSize="20dp"
                 />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/Name"
-            android:id="@+id/version_name"
-            android:textColor="@color/blue2"
-            android:layout_toRightOf="@id/version"
-            android:text=" 2.0"
-            android:textSize="20dp"
-            />
+
+            <TextView
+                android:id="@+id/version_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/Name"
+                android:layout_toRightOf="@id/version"
+                android:text=" 3.0"
+                android:textColor="@color/blue2"
+                android:textSize="20dp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -114,12 +114,11 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
                 android:autoSizeTextType="uniform"
                 android:textColor="@color/grey2"
-                android:textSize="15sp"
+                android:layout_below="@id/author"
                 android:layout_alignParentBottom="true"
-                android:text="Report Bugs at \nwww.github.com/captain-nemo1/MusicPlayer"
+                android:text="Report Bugs at: \nwww.github.com/captain-nemo1/MusicPlayer"
                 />
         </RelativeLayout>
     </androidx.cardview.widget.CardView>

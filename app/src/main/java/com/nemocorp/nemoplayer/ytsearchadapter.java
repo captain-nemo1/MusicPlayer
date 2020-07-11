@@ -9,7 +9,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.List;
-
+//this is used for youtube search results
 public class ytsearchadapter extends ArrayAdapter {
     private List<String> title;
     private Activity context;
@@ -19,7 +19,7 @@ public class ytsearchadapter extends ArrayAdapter {
      Button b2;
 
     public ytsearchadapter(Activity context, List<String> title,List<String> dur,List<String> channel) {
-        super(context, R.layout.row, title);
+        super(context, R.layout.row3, title);
         this.context = context;
         this.title = title;
         this.dur=dur;

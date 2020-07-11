@@ -12,9 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Playlist extends Fragment {
     ListView list_play;
     Activity referenceActivity;
@@ -30,9 +27,7 @@ public class Playlist extends Fragment {
     @Override
     public void onResume()
     {
-        List<String> id=new ArrayList<>();
-        id.add("playlist");//creating this id as we use the same adapter for main list and playlist, so if we are searching songs and press playlist button then wont crash. Look At myAdapter line 33
-        myAdapter playlit = new myAdapter(referenceActivity, MainActivity.playlist_song_name, MainActivity.playlist_song_artist, id);
+        myAdapter playlit = new myAdapter(referenceActivity, MainActivity.playlist_song_name, MainActivity.playlist_song_artist);
         list_play.setAdapter(playlit);
             list_play.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override

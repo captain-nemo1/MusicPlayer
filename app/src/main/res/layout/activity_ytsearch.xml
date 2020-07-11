@@ -25,6 +25,7 @@
         android:layout_margin="10dp"
         android:backgroundTint="@color/selector2"
         android:background="@drawable/roundedcorner"
+        android:foreground="?android:selectableItemBackground"
         android:text="@string/search_button"
         android:textColor="@color/white" />
 
@@ -35,7 +36,7 @@
         android:layout_below="@id/button4"
         android:choiceMode="singleChoice"
         android:divider="@null"
-        android:listSelector="@color/grey">
+        android:listSelector="@color/grey2">
     </ListView>
 
 </RelativeLayout>

@@ -9,6 +9,7 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -42,7 +43,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -66,6 +70,8 @@ import androidx.core.view.MenuItemCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -79,13 +85,18 @@ import org.jsoup.nodes.Document;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static androidx.recyclerview.widget.ItemTouchHelper.ACTION_STATE_SWIPE;
+import static androidx.recyclerview.widget.ItemTouchHelper.LEFT;
+import static androidx.recyclerview.widget.ItemTouchHelper.RIGHT;
 import static com.nemocorp.nemoplayer.StickyService.mediaSession;
 import static com.nemocorp.nemoplayer.Ytsearch.streaming;
 
@@ -137,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
     static String stream_name;
     static String stream_channel;
     static Bitmap stream_thumnail;
-    static Bitmap download_thumnail;
     static Thread t = null;
     static Thread bit=null;
     static Intent service;
@@ -161,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
     static URL imageurl;
     static Thread ch;
     static List_Async ls;
-   // static myAdapter madapter;
     static boolean byCall=false;
     static TelephonyManager telephonyManager;
     static PhoneStateListener callStateListener;
@@ -169,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
     public static int playlist_play=0;
     FragmentTransaction ftx = null;
     static int playlist_index;
+    static String prev_bottom_view=String.valueOf(R.id.home); //for animation select for action_downloader Fragment
     static AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
@@ -286,11 +296,9 @@ public class MainActivity extends AppCompatActivity {
                 .hide(play)
                 .hide(yt)
                 .commit();
-        bv.setSelectedItemId(R.id.home);
         telephonyManager = (TelephonyManager)getSystemService(getApplicationContext().TELEPHONY_SERVICE);
         callStateListener = new PhoneStateListener();
         stop_call(this);
-
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
@@ -370,7 +378,6 @@ public class MainActivity extends AppCompatActivity {
                         String s = songs.get(current);
                         i.putExtra("art", s);
                         startActivity(i);
-                        overridePendingTransition(R.anim.bottom_up, R.anim.nothing);
                     }
                 }
             }
@@ -385,7 +392,6 @@ public class MainActivity extends AppCompatActivity {
                         String s = songs.get(current);
                         i.putExtra("art", s);
                         startActivity(i);
-                        overridePendingTransition(R.anim.bottom_up, R.anim.nothing);
                     }
                 }
             }
@@ -424,7 +430,14 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("values", "CLICKED DOWNLOADER");
                         appendLog("CLICKED DOWNLOADER");
                         search.setEnabled(false);
-                        fm.beginTransaction().show(yt).hide(play).hide(home).commit();
+                        try {//Need to add try catch otherwise gives problem when musicpage onBackPressed
+                            if (prev_bottom_view.equals("R.id.home"))
+                                fm.beginTransaction().setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left).show(yt).hide(play).hide(home).commit();
+                            else
+                                fm.beginTransaction().setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right).show(yt).hide(play).hide(home).commit();
+                        } catch (Exception ex) {
+                        }
+                        prev_bottom_view= String.valueOf(R.id.action_downloader);
                         break;
                     case R.id.action_player:
                             if (first != 0) {
@@ -436,17 +449,23 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case R.id.action_playlist:
                         search.setEnabled(false);
-                        fm.beginTransaction().show(play).hide(home).hide(yt).commit();
+                        try {
+                            fm.beginTransaction().setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left).show(play).hide(home).hide(yt).commit();
+                        } catch (Exception ex) {
+                        }//Need to add try catch otherwise gives problem when musicpage onBackPressed
+                        prev_bottom_view= String.valueOf(R.id.action_playlist);
                         break;
                     case R.id.home:
-                        try {
+                        try {//android.R.anim are system inbuild.
+                            fm.beginTransaction().setCustomAnimations(android.R.anim.slide_in_left,android.R.anim.slide_out_right).show(home).hide(yt).hide(play).commit();
                             search.setEnabled(true);
                         } catch (Exception ex) {
                         }
-                        fm.beginTransaction().show(home).hide(yt).hide(play).commit();
+                        prev_bottom_view= String.valueOf(R.id.home);
                         break;
                 } return true;
             }});
+        bv.setSelectedItemId(R.id.home);//open homw fragment on start
     }
 
     public void setting_page(View view)
@@ -505,10 +524,15 @@ public class MainActivity extends AppCompatActivity {
             new_index=playlist_songs.size()-1;
         playlist_index=new_index;
         Log.d("prev playting", new_index+"   "+ playlist_index);
-        String k=(playlist_songs.get(new_index));
-        int p=songs.indexOf(k);
-        current=p;
-        Log.d("prev", k);
+        try {
+            String k = (playlist_songs.get(new_index));
+            int p = songs.indexOf(k);
+            current = p;
+        } catch (Exception ex) {//playlist error or playlist empty
+            ex.printStackTrace();
+            current++;
+            playlist_play=0;
+        }
     }
     static public void play(int position)
     {
@@ -529,6 +553,7 @@ public class MainActivity extends AppCompatActivity {
         String songname = songs.get(position);
         stopifSongPlaying();
         current = position;
+        StickyService.setting_icon();
         s.setEnabled(true);
         media(songname);
         first = 1;
@@ -566,6 +591,17 @@ public class MainActivity extends AppCompatActivity {
                 logFile.delete();
             }
         }
+        double size=logFile.length()/(1024*1024); //clear content when size more than 2mb
+        if(size>2)
+        {
+            PrintWriter writer = null;
+            try {
+                writer = new PrintWriter(logFile);
+            } catch (FileNotFoundException ex) {
+                ex.printStackTrace();
+            }
+            writer.close();
+        }
         try
         {
             //BufferedWriter for performance, true to set append to file flag
@@ -585,7 +621,6 @@ public class MainActivity extends AppCompatActivity {
 
     static public void scrap_speed()
     {
-        Log.i("values", "SCRAP SPEED");
         appendLog("SCRAP SPEED");
         ch=new Thread(){
             @Override
@@ -637,7 +672,6 @@ public class MainActivity extends AppCompatActivity {
         return bitmap;
     }
     static public void downloadfinished(Context ctx){
-    Log.i("values", "DOWNLOAD FINISHED");
     appendLog("DOWNLOAD FINISHED");
         onComplete=new BroadcastReceiver() {
         @Override
@@ -659,17 +693,8 @@ public class MainActivity extends AppCompatActivity {
                             Ytsearch.add_tags(context);
 
                             try {
-                                Log.d("values", "updated");
-                               // List_Async ls = new List_Async(context);
                                 if (Build.VERSION.SDK_INT >=Build.VERSION_CODES.O)
                                 {
-                                   /* MediaScannerConnection.scanFile(ctx, new String[]{String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)), String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC))}, new String[]{"audio/*"}, new MediaScannerConnection.OnScanCompletedListener() {
-                                        @Override
-                                        public void onScanCompleted(String s, Uri uri) {
-                                            ls.execute("0");
-
-                                        }
-                                    });*/
                                     new SingleMediaScanner(MainActivity.con_main, new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC) + "/" + Ytsearch.filetitle));
                                 }
                                 else
@@ -715,14 +740,18 @@ public class MainActivity extends AppCompatActivity {
     {
         Log.i("values", "CREATING LIST");
         appendLog("CREATING LIST");
-
-       // madapter=new myAdapter(ctx,song_name, song_artist,songs);
         RecyclerView.LayoutManager layoutManager= new LinearLayoutManager(ctx);
-       // madapter.notifyDataSetChanged();
         list.setLayoutManager(layoutManager);
-        adap.notifyDataSetChanged();
+        list.addItemDecoration(new DividerItemDecoration(MainActivity.con_main,DividerItemDecoration.VERTICAL)); //for divider in between
+        //animation, code from https://www.journaldev.com/24088/android-recyclerview-layout-animations
+        final LayoutAnimationController controller =
+                AnimationUtils.loadLayoutAnimation(MainActivity.con_main, R.anim.layout_animation_left_to_right);
+        list.setLayoutAnimation(controller);
+        list.scheduleLayoutAnimation();//to show animation when come back from searchview
         list.setAdapter(adap);
-        //  list.setAdapter(madapter);
+        SwipeController swipeController = new SwipeController();
+        ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeController);
+        itemTouchhelper.attachToRecyclerView(list);
     }
   @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -745,7 +774,7 @@ public class MainActivity extends AppCompatActivity {
           @Override
           public boolean onMenuItemActionCollapse(MenuItem menuItem) {
               list.setVisibility(View.VISIBLE);
-              adap.notifyDataSetChanged();
+              //adap.notifyDataSetChanged();
               list.setAdapter(adap);
               return true;
           }
@@ -781,7 +810,7 @@ public class MainActivity extends AppCompatActivity {
                   list.setVisibility(View.GONE);
               }
               else
-              { MainList madapter=new MainList();
+              {   MainList madapter=new MainList();
                   madapter.notifyDataSetChanged();
                   list.setAdapter(madapter);
                   list.setVisibility(View.VISIBLE);
@@ -799,9 +828,14 @@ public class MainActivity extends AppCompatActivity {
         if(streaming==true)
             requestAudio();
         fileopen();
-        try {
+       try {//after musicpage ondestroy
+           if(prev_bottom_view.equals(String.valueOf(R.id.home)))
             bv.setSelectedItemId(R.id.home);
-        } catch (Exception ex) {
+           else if(prev_bottom_view.equals(String.valueOf(R.id.action_playlist)))
+               bv.setSelectedItemId(R.id.action_playlist);
+            else
+               bv.setSelectedItemId(R.id.action_downloader);
+       } catch (Exception ex) {
             ex.printStackTrace();
         }
         super.onResume();
@@ -942,12 +976,12 @@ public class MainActivity extends AppCompatActivity {
         try {
             mediaPlayer.reset();
             mediaPlayer.setDataSource(path);
+            mediaPlayer.prepareAsync();//just using prepare blocks main thread
         } catch (IOException ex) {
             ex.printStackTrace();
             appendLog("MediaPlayer error"+ ex);
             mediaPlayer.reset();
         }
-        mediaPlayer.prepareAsync();//just using prepare blocks main thread
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mediaPlayer) {
@@ -995,8 +1029,8 @@ public class MainActivity extends AppCompatActivity {
         t = new Thread() {
             @Override
             public void run() {
-                StickyService.metadata();
-                StickyService.setting_icon();
+               // StickyService.metadata();
+                //StickyService.setting_icon();
                 int currentPosition = 0;
                 int total = mediaPlayer.getDuration();
                 s.setMax(total);
@@ -1075,6 +1109,7 @@ public class MainActivity extends AppCompatActivity {
                 Random r = new Random();
                 current = r.nextInt(songs.size() - 1);
             }
+            StickyService.setting_icon();
             String prevsong = songs.get(current);
             stopifSongPlaying();
             media(prevsong);
@@ -1100,6 +1135,7 @@ public class MainActivity extends AppCompatActivity {
                     Random r = new Random();
                     current = r.nextInt(songs.size() - 1);
                 }
+                StickyService.setting_icon();
                 String nextsong = songs.get(current);
                 stopifSongPlaying();
                 try {
@@ -1317,5 +1353,124 @@ class SingleMediaScanner implements MediaScannerConnection.MediaScannerConnectio
         MainActivity.ls.execute("0");
         mMs.disconnect();
     }
+}
+//Code from https://codeburst.io/android-swipe-menu-with-recyclerview-8f28a235ff28?gi=11cc5f0055c9
+class SwipeController extends ItemTouchHelper.Callback {
+    private boolean swipeBack = false;
+    private static final float swipe_needed = 300;
+    @Override
+    public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+        return makeMovementFlags(0, LEFT | RIGHT);
+    }
 
+    @Override
+    public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+        return false;
+    }
+
+    @Override
+    public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+    }
+    @Override
+    public int convertToAbsoluteDirection(int flags, int layoutDirection) {
+        if (swipeBack) {
+            swipeBack = false;
+            return 0;
+        }
+        return super.convertToAbsoluteDirection(flags, layoutDirection);
+    }
+    @Override
+    public void onChildDraw(Canvas c,
+                            RecyclerView recyclerView,
+                            RecyclerView.ViewHolder viewHolder,
+                            float dX, float dY,
+                            int actionState, boolean isCurrentlyActive) {
+
+        if (actionState == ACTION_STATE_SWIPE) {
+            setTouchListener(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+        }
+        super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+    }
+
+    private void setTouchListener(Canvas c,
+                                  RecyclerView recyclerView,
+                                  RecyclerView.ViewHolder viewHolder,
+                                  float dX, float dY,
+                                  int actionState, boolean isCurrentlyActive) {
+
+        recyclerView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                swipeBack = event.getAction() == MotionEvent.ACTION_CANCEL || event.getAction() == MotionEvent.ACTION_UP;
+                if(swipeBack)
+                {
+                    if (dX >swipe_needed) //for playlist
+                    {
+                        int k;
+                        if(MainActivity.temp4.size()>0)
+                            k=MainActivity.temp4.get(viewHolder.getAdapterPosition());
+                        else
+                            k=viewHolder.getAdapterPosition();
+                        Log.d("playlist", k+" ");
+                        String name=MainActivity.songs.get(k);
+                        if(!MainActivity.playlist_songs.contains(name)) {
+                            MainActivity.playlist_songs.add(MainActivity.songs.get(k));
+                            MainActivity.playlist_song_artist.add(MainActivity.song_artist.get(k));
+                            MainActivity.playlist_song_name.add(MainActivity.song_name.get(k));
+                            Toast.makeText(MainActivity.main, "Added to Playlist", Toast.LENGTH_SHORT).show();
+                        }
+                        else
+                            Toast.makeText(MainActivity.main, "Already in Playlist", Toast.LENGTH_SHORT).show();
+                    }
+                    else if (dX <-swipe_needed)
+                    {
+                        int i;
+                        if(MainActivity.temp4.size()>0)
+                            i=MainActivity.temp4.get(viewHolder.getAdapterPosition());
+                        else
+                            i=viewHolder.getAdapterPosition();
+                        AlertDialog.Builder dialog=new AlertDialog.Builder(MainActivity.main)
+                                .setMessage(MainActivity.song_name.get(i))
+                                .setTitle("Delete")
+                                .setCancelable(true)
+                                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        try {
+                                            File del = new File(MainActivity.songs.get(i));
+                                            boolean f=del.delete();
+                                            if(f)
+                                            {
+                                                Toast.makeText(MainActivity.con_main, "Deleted " + MainActivity.song_name.get(i), Toast.LENGTH_SHORT).show();
+                                                new SingleMediaScanner(MainActivity.con_main, new File(MainActivity.songs.get(i)));
+                                                MainActivity.songInfo.remove(i);
+                                                MainActivity.adap.notifyItemRemoved(i);
+                                                MainActivity.song_name.remove(i);
+                                                MainActivity.song_artist.remove(i);
+                                                MainActivity.song_album.remove(i);
+                                                MainActivity.song_dur.remove(i);
+                                                MainActivity.song_id.remove(i);
+                                                MainActivity.songs.remove(i);
+                                            }
+                                            else
+                                                Toast.makeText(MainActivity.con_main, "Can't Delete files in SD-Card", Toast.LENGTH_SHORT).show();
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                            Log.d("values",ex+"");
+                                        }
+                                    }
+                                })
+                                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+                            AlertDialog alert = dialog.create();
+                            alert.show();
+                    }
+                }
+
+                return false;
+            }
+        });
+    }
 }
