@@ -7,6 +7,7 @@ import android.provider.MediaStore;
 
 import androidx.core.content.res.ResourcesCompat;
 
+
 import java.io.IOException;
 
 public class SongItems {
@@ -50,7 +51,6 @@ public class SongItems {
     }
     public void Set_ARTWORK(Bitmap temp){ //used when we download thumnail in musicpage
         artwork=temp;
-        MainActivity.adap.notifyItemChanged(MainActivity.current);
     }
 
     public long get_Album_id(){

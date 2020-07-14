@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
@@ -20,12 +21,26 @@ import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.media.session.MediaButtonReceiver;
+
+
+import com.facebook.common.executors.CallerThreadExecutor;
+import com.facebook.common.references.CloseableReference;
+import com.facebook.datasource.DataSource;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.imagepipeline.common.ResizeOptions;
+import com.facebook.imagepipeline.core.ImagePipeline;
+import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber;
+import com.facebook.imagepipeline.image.CloseableImage;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 import java.io.IOException;
 
@@ -53,8 +68,9 @@ public class StickyService extends Service {
     static MediaMetadata.Builder mediaMetadataBuilder=new MediaMetadata.Builder();
     static MediaSessionCompat mediaSession;
     static Bitmap icon;
-    static MediaMetadataRetriever m = new MediaMetadataRetriever();
-    public static PlaybackStateCompat state;
+    static Uri previous_uri;
+  //  static MediaMetadataRetriever m = new MediaMetadataRetriever();
+   // public static PlaybackStateCompat state;
     @Override
     public void onCreate()
     {
@@ -121,22 +137,31 @@ public class StickyService extends Service {
             } catch (Exception e) {
                 icon = BitmapFactory.decodeResource(con_main.getResources(), R.drawable.album);
             }*/
-            try {
-                icon.recycle();
-                icon = null;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             Uri sArtworkUri = Uri
                     .parse("content://media/external/audio/albumart");
             Uri albumArtUri = ContentUris.withAppendedId(sArtworkUri, MainActivity.songInfo.get(current).album_id);
-            try {
-                icon = MediaStore.Images.Media.getBitmap(MainActivity.con_main.getContentResolver(), albumArtUri);
-                icon=Bitmap.createScaledBitmap(icon,150,150,true);
-            } catch (IOException e) {
-                icon=MainActivity.drawableToBitmap(ResourcesCompat.getDrawable(MainActivity.main.getResources(),R.drawable.ic_music_note_black_24dp,null));
+         /*   try {
+                Glide.with(MainActivity.con_main).asBitmap().load(albumArtUri).apply(new RequestOptions().override(150,150)).into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                        icon=resource;
+                    }
+
+                    @Override
+                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                        Toast.makeText(MainActivity.con_main,"Failed Icon Set", Toast.LENGTH_SHORT).show();
+                        icon=MainActivity.drawableToBitmap(ResourcesCompat.getDrawable(MainActivity.main.getResources(),R.drawable.ic_music_note_black_24dp,null));
+                        MainActivity.con_main.startService(MainActivity.service);
+                        super.onLoadFailed(errorDrawable);
+                    }
+                });
+            //    icon = MediaStore.Images.Media.getBitmap(MainActivity.con_main.getContentResolver(), albumArtUri);
+              //  icon=Bitmap.createScaledBitmap(icon,120,150,true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }*/
+                fresco_Data(albumArtUri);
             }
-        }
         else if(Ytsearch.streaming) {
             icon = MainActivity.stream_thumnail;
             if(MainActivity.k1==1)
@@ -148,12 +173,41 @@ public class StickyService extends Service {
             }
         }
     }
+    public static void fresco_Data(Uri artwork)
+    {
+        ImagePipeline imagePipeline = Fresco.getImagePipeline();
+
+        ImageRequest imageRequest = ImageRequestBuilder
+                .newBuilderWithSource(artwork)
+                .setResizeOptions(new ResizeOptions(150,150))
+                .build();
+
+        DataSource<CloseableReference<CloseableImage>> dataSource =
+                imagePipeline.fetchDecodedImage(imageRequest, MainActivity.con_main);
+
+        try {
+            dataSource.subscribe(new BaseBitmapDataSubscriber() {
+                @Override
+                public void onNewResultImpl(@Nullable Bitmap bitmap) {
+                  icon=bitmap;
+                    MainActivity.con_main.startService(MainActivity.service);// placed here cause when we change Musicpage Thumnail after downloading then need to change icon in service
+                }
+                @Override
+                public void onFailureImpl(DataSource dataSource) {
+                    icon=MainActivity.drawableToBitmap(ResourcesCompat.getDrawable(MainActivity.main.getResources(),R.drawable.ic_music_note_black_24dp,null));
+                    MainActivity.con_main.startService(MainActivity.service);
+                }
+            }, CallerThreadExecutor.getInstance());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public int onStartCommand(Intent i, int flags, int startId )
     {
         metadata();
         //setting_icon();
-        MediaButtonReceiver.handleIntent(mediaSession, i);//new
+     //   MediaButtonReceiver.handleIntent(mediaSession, i);//new
         MediaSessionCompat.Token token=mediaSession.getSessionToken();
         Intent intent = new Intent(this, MainActivity.class);
         intent.setAction(Intent.ACTION_MAIN);

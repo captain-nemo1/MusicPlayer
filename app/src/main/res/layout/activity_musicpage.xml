@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
     android:id="@+id/lay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,20 +24,19 @@
             android:background="@drawable/down1" />
     </RelativeLayout>
     <androidx.cardview.widget.CardView
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="3"
-    android:layout_marginLeft="20dp"
-    app:cardCornerRadius="12dp"
-    android:elevation="10dp"
-    >
-
-    <ImageView
-        android:id="@+id/image"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:contentDescription="AlbumArt"
-        />
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:layout_marginStart="20dp"
+        app:cardCornerRadius="12dp"
+        android:elevation="10dp"
+        >
+        <com.facebook.drawee.view.SimpleDraweeView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            fresco:actualImageScaleType="centerInside"
+            android:id="@+id/image"
+            />
     </androidx.cardview.widget.CardView>
 
 

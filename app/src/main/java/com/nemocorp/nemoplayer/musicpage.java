@@ -2,6 +2,7 @@ package com.nemocorp.nemoplayer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -31,11 +33,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.palette.graphics.Palette;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
+
+import com.facebook.common.executors.CallerThreadExecutor;
+import com.facebook.common.references.CloseableReference;
+import com.facebook.datasource.DataSource;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.core.ImagePipeline;
+import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber;
+import com.facebook.imagepipeline.image.CloseableImage;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.jaudiotagger.audio.AudioFile;
@@ -91,7 +102,7 @@ public class musicpage extends AppCompatActivity {
     static List<Drawable> draw;
     static String change_name_of="none";
     static String new_name="";
-    static ImageView i1;
+    static SimpleDraweeView i1;
     static LinearLayout c1;
     static List<String> resultUrls;
     Intent service;
@@ -464,7 +475,7 @@ public class musicpage extends AppCompatActivity {
     }
     static public void change_Album_Art()
     {
-        MediaMetadataRetriever m= new MediaMetadataRetriever();
+       /* MediaMetadataRetriever m= new MediaMetadataRetriever();
         m.setDataSource(songs.get(MainActivity.current));
         if(!Ytsearch.streaming) {
             try {
@@ -498,7 +509,69 @@ public class musicpage extends AppCompatActivity {
         {
             i1.setBackground(new BitmapDrawable(MainActivity.stream_thumnail));
             background(MainActivity.stream_thumnail);
-        }
+        }*/
+       if(!Ytsearch.streaming)
+       {
+           Uri sArtworkUri = Uri
+                   .parse("content://media/external/audio/albumart");
+           Uri albumArtUri = ContentUris.withAppendedId(sArtworkUri, MainActivity.songInfo.get(current).album_id);
+           ImagePipeline imagePipeline = Fresco.getImagePipeline();
+           ImageRequest imageRequest = ImageRequestBuilder
+                   .newBuilderWithSource(albumArtUri)
+                   .build();
+
+           DataSource<CloseableReference<CloseableImage>> dataSource =
+                   imagePipeline.fetchDecodedImage(imageRequest, MainActivity.con_main);
+
+           try {
+               dataSource.subscribe(new BaseBitmapDataSubscriber() {
+                   @Override
+                   public void onNewResultImpl(@Nullable Bitmap bitmap) {
+                       Drawable d=new BitmapDrawable(MainActivity.con_main.getResources(),bitmap);
+                       MainActivity.main.runOnUiThread(new Runnable() {
+                           @Override
+                           public void run() {
+                               i1.setBackground(d);
+                           }
+                       });
+                       background(bitmap);
+                   }
+                   @Override
+                   public void onFailureImpl(DataSource dataSource) {
+                       MainActivity.main.runOnUiThread(new Runnable() {
+                           @Override
+                           public void run() {
+                               i1.setBackground(music.getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
+                           }
+                       });
+                       if(musicpage.old!=null) {//animate color to black if previous color existed
+                           Drawable backgrounds[] = new Drawable[2];
+                           backgrounds[0] = old;
+                           ColorDrawable temp = new ColorDrawable(music.getResources().getColor(R.color.black));
+                           backgrounds[1] = temp;
+                           TransitionDrawable crossfader = new TransitionDrawable(backgrounds);
+                           c1.setBackground(crossfader);
+                           crossfader.startTransition(250);
+                       }
+                       else { //set directly to black if first time opened
+                           c1.setBackgroundColor(music.getResources().getColor(R.color.black));
+                       }
+                       int[] colors = {Color.BLACK, Color.BLACK};
+                       GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors);
+                       old = gd;
+                       t1.setTextColor(music.getResources().getColor(R.color.white));
+                       t4.setTextColor(music.getResources().getColor(R.color.white));
+                   }
+               }, CallerThreadExecutor.getInstance());
+           } catch (Exception e) {
+               e.printStackTrace();
+           }
+       }
+       else
+       {
+         i1.setBackground(new BitmapDrawable(MainActivity.con_main.getResources(),MainActivity.stream_thumnail));
+         background(MainActivity.stream_thumnail);
+       }
     }
 
     @Override
@@ -686,10 +759,11 @@ public class musicpage extends AppCompatActivity {
         thumbnail2.start();
     }
    static public void downloadImages(String inSrc) throws IOException {
-     MainActivity.main.runOnUiThread(new Runnable() {
+     /*MainActivity.main.runOnUiThread(new Runnable() {
          @Override
          public void run() {
-             Glide.with(music).load(inSrc).into(new SimpleTarget<Drawable>() {
+
+           /*  Glide.with(music).load(inSrc).into(new SimpleTarget<Drawable>() {
                  @Override
                  public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
                      i1.setBackground(resource);
@@ -722,11 +796,22 @@ public class musicpage extends AppCompatActivity {
                                                  } else {
                                                      tag.addField(artwork);
                                                  }
+                                                 if(tag.getFirst(FieldKey.ALBUM)==null)
+                                                     tag.addField(FieldKey.ALBUM,MainActivity.song_id.get(current));
                                              }
-                                             SongItems obj = MainActivity.songInfo.get(current);
-                                             obj.Set_ARTWORK(temp);
                                              f.commit();
-                                             MediaScannerConnection.scanFile(musicpage.ct_main, new String[]{songs.get(current)}, new String[]{"mp3/*"}, null);
+                                             MediaScannerConnection.scanFile(musicpage.ct_main, new String[]{songs.get(current)}, new String[]{"mp3/*"}, new MediaScannerConnection.OnScanCompletedListener() {
+                                                 @Override
+                                                 public void onScanCompleted(String path, Uri uri) {
+                                                     ImagePipeline imagePipeline = Fresco.getImagePipeline();
+                                                     Uri sArtworkUri = Uri
+                                                             .parse("content://media/external/audio/albumart");
+                                                     Uri albumArtUri = ContentUris.withAppendedId(sArtworkUri, MainActivity.songInfo.get(current).album_id);
+                                                     imagePipeline.evictFromCache(albumArtUri);
+                                                     // imagePipeline.clearCaches();//need to remove old image in cache
+                                                     StickyService.setting_icon();
+                                                 }
+                                             });
                                          } catch (IOException | CannotReadException | ReadOnlyFileException | TagException | InvalidAudioFrameException | CannotWriteException e) {
                                              e.printStackTrace();
                                          }
@@ -735,7 +820,92 @@ public class musicpage extends AppCompatActivity {
                         }
                      }
              });
-         }});
+         }});*/
+       fresco_Download_Artwork(Uri.parse(inSrc));
+
+   }
+    public static void fresco_Download_Artwork(Uri artwork)
+    {
+        ImagePipeline imagePipeline = Fresco.getImagePipeline();
+
+        ImageRequest imageRequest = ImageRequestBuilder
+                .newBuilderWithSource(artwork)
+                .build();
+
+        DataSource<CloseableReference<CloseableImage>> dataSource =
+                imagePipeline.fetchDecodedImage(imageRequest, MainActivity.con_main);
+
+        try {
+            dataSource.subscribe(new BaseBitmapDataSubscriber() {
+                @Override
+                public void onNewResultImpl(@Nullable Bitmap bitmap) {
+                    Drawable bp=new BitmapDrawable(MainActivity.con_main.getResources(),bitmap);
+                    MainActivity.main.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            i1.setBackground(bp);
+
+                        }
+                    });
+                    background(bitmap);
+                    thumnail_no++;
+                    String path=MainActivity.songInfo.get(current).get_Song();
+                    if(path.contains("emulated/0/")) {  // in internal storage and m4a
+                        Snackbar.make(musicpage.music.findViewById(android.R.id.content), "Set This Image as Album Art?", Snackbar.LENGTH_LONG)
+                                .setAction("Yes", new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        File e1 = new File(path);
+                                        try {
+                                            AudioFile f = AudioFileIO.read(e1);
+                                            if(path.contains("m4a")) {
+                                                Mp4Tag mp4tag = (Mp4Tag) f.getTag();
+                                                mp4tag.deleteField(Mp4FieldKey.ARTWORK);
+                                                mp4tag.addField(mp4tag.createArtworkField(Ytsearch.convert_byte(bitmap)));
+                                                mp4tag.setField(FieldKey.ALBUM, String.valueOf(mp4tag.get(Mp4FieldKey.ALBUM)));
+                                            }
+                                            else if(path.contains("mp3"))
+                                            {
+                                                Tag tag=f.getTag();
+                                                Artwork artwork = new AndroidArtwork();
+                                                artwork.setBinaryData(Ytsearch.convert_byte(bitmap));
+                                                if (tag.getFirstArtwork() != null) {
+                                                    tag.deleteArtworkField();
+                                                    tag.setField(artwork);
+                                                } else {
+                                                    tag.addField(artwork);
+                                                }
+                                                if(tag.getFirst(FieldKey.ALBUM)==null)
+                                                    tag.addField(FieldKey.ALBUM,MainActivity.song_id.get(current));
+                                            }
+                                            f.commit();
+                                            MediaScannerConnection.scanFile(musicpage.ct_main, new String[]{songs.get(current)}, new String[]{"mp3/*"}, new MediaScannerConnection.OnScanCompletedListener() {
+                                                @Override
+                                                public void onScanCompleted(String path, Uri uri) {
+                                                    ImagePipeline imagePipeline = Fresco.getImagePipeline();
+                                                    Uri sArtworkUri = Uri
+                                                            .parse("content://media/external/audio/albumart");
+                                                    Uri albumArtUri = ContentUris.withAppendedId(sArtworkUri, MainActivity.songInfo.get(current).album_id);
+                                                    imagePipeline.evictFromCache(albumArtUri);
+                                                    StickyService.setting_icon();
+                                                }
+                                            });
+                                        } catch (IOException | CannotReadException | ReadOnlyFileException | TagException | InvalidAudioFrameException | CannotWriteException e) {
+                                            e.printStackTrace();
+                                            Toast.makeText(MainActivity.con_main,"Error"+e,Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                }).show();
+                    }
+                }
+                @Override
+                public void onFailureImpl(DataSource dataSource) {
+
+                }
+            }, CallerThreadExecutor.getInstance());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public void stop_Download_Thread()
     {
@@ -767,12 +937,10 @@ public class musicpage extends AppCompatActivity {
         s2=null;
         b1=b3=b4=null;
         music=null;
-        c1=null;
         draw=null;
         change_name_of=null;
         new_name=null;
         i1=null;
-         c1=null;
         stop_Download_Thread();
         resultUrls=null;
          ct_main=null;

@@ -75,6 +75,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.flurry.android.FlurryAgent;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.nemocorp.nemoplayer.adapter.MainList;
@@ -245,6 +247,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void all_Stuff()
     {
+        ImagePipelineConfig config = ImagePipelineConfig.newBuilder(this)
+            .setDownsampleEnabled(true)
+                .setDiskCacheEnabled(true)
+                .build();
+        Fresco.initialize(this,config);
         final Toolbar yourToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(yourToolbar);
         createNotificationChannel();
@@ -349,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
                             musicpage.t4.setText(song_artist.get(current));
                         else
                             musicpage.t4.setText("");
-                        MediaMetadataRetriever m = new MediaMetadataRetriever();
+                     /*   MediaMetadataRetriever m = new MediaMetadataRetriever();
                         try {
                             m.setDataSource(songs.get(MainActivity.current));
                             byte[] a = m.getEmbeddedPicture();
@@ -360,7 +367,8 @@ public class MainActivity extends AppCompatActivity {
                         } catch (Exception e) {
                             musicpage.i1.setBackground(getResources().getDrawable(R.drawable.ic_music_note_black_24dp));
                             musicpage.c1.setBackgroundColor(getResources().getColor(R.color.black));
-                        }
+                        }*/
+                        musicpage.change_Album_Art();
                         Log.i("values", "SONG COMPLETE STARTING NEXT IN MAIN");
                         appendLog("SONG COMPLETE STARTING NEXT IN MAIN");
                     }
@@ -431,7 +439,7 @@ public class MainActivity extends AppCompatActivity {
                         appendLog("CLICKED DOWNLOADER");
                         search.setEnabled(false);
                         try {//Need to add try catch otherwise gives problem when musicpage onBackPressed
-                            if (prev_bottom_view.equals("R.id.home"))
+                            if (prev_bottom_view.equals(String.valueOf(R.id.home)))
                                 fm.beginTransaction().setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left).show(yt).hide(play).hide(home).commit();
                             else
                                 fm.beginTransaction().setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right).show(yt).hide(play).hide(home).commit();
@@ -659,13 +667,11 @@ public class MainActivity extends AppCompatActivity {
                 return bitmapDrawable.getBitmap();
             }
         }
-
         if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565); // Single color bitmap will be created of 1x1 pixel
         } else {
-            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.RGB_565);
         }
-
         Canvas canvas = new Canvas(bitmap);
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);
@@ -747,6 +753,7 @@ public class MainActivity extends AppCompatActivity {
         final LayoutAnimationController controller =
                 AnimationUtils.loadLayoutAnimation(MainActivity.con_main, R.anim.layout_animation_left_to_right);
         list.setLayoutAnimation(controller);
+        list.setHasFixedSize(true);
         list.scheduleLayoutAnimation();//to show animation when come back from searchview
         list.setAdapter(adap);
         SwipeController swipeController = new SwipeController();
@@ -1231,13 +1238,13 @@ public class MainActivity extends AppCompatActivity {
                     song_album.add(album);
                     if(ch.equals("0") && !songInfo.get(i).get_Song().equals(data) ) {
                         SongItems ob = new SongItems(data, title, artist, dur, album, album_id);
-                        ob.set_Artwork();
+                       // ob.set_Artwork();
                         songInfo.add(i,ob);
                     }
-                    else if(ch.equals("1"))
+                    else
                     {
                         SongItems ob = new SongItems(data, title, artist, dur, album, album_id);
-                        ob.set_Artwork();
+                       // ob.set_Artwork();
                         songInfo.add(ob);
                     }
                     i++;

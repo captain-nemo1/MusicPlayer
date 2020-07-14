@@ -69,9 +69,12 @@ public class NotificationReceiver extends BroadcastReceiver {
             context.startService(service);
         }
         else {
-            notificationManager.cancel(101);
-
-            android.os.Process.killProcess(android.os.Process.myPid());
+            try {
+                notificationManager.cancel(101);
+                android.os.Process.killProcess(android.os.Process.myPid());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
     public void changephotoactivity2()
